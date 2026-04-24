@@ -110,7 +110,7 @@ export function PromptComposer({
       <textarea
         value={prompt}
         onChange={(event) => onPromptChange(event.target.value)}
-        placeholder="例如：做一个面向独立开发者的发布计划助手，包含任务拆解、里程碑、发布说明生成和历史记录。"
+        placeholder="例如：做一个普通计算器"
       />
 
       <section className="template-library">

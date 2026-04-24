@@ -1,7 +1,7 @@
+import { buildPreviewSchema } from "./preview-schema";
 import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject, ProjectAttachment } from "./types";
 
-const SAMPLE_PROMPT =
-  "做一个面向独立开发者的发布计划助手，能把产品想法整理成页面结构、任务清单和发布说明。";
+const SAMPLE_PROMPT = "做一个普通计算器";
 
 export function getSamplePrompt() {
   return SAMPLE_PROMPT;
@@ -44,7 +44,7 @@ function buildTitle(prompt: string) {
   const chineseOnly = compact.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, "");
 
   if (/[\u4e00-\u9fa5]/.test(chineseOnly)) {
-    return `${chineseOnly.slice(0, 10) || "AI应用"}工作台`;
+    return chineseOnly.slice(0, 10) || "AI 应用";
   }
 
   const words = compact
@@ -54,7 +54,7 @@ function buildTitle(prompt: string) {
     .slice(0, 5);
 
   if (words.length === 0) {
-    return "AI 应用工作台";
+    return "AI App Workspace";
   }
 
   return words
@@ -65,6 +65,8 @@ function buildTitle(prompt: string) {
 function buildBlueprint(prompt: string, title: string, attachments: ProjectAttachment[]): AppBlueprint {
   const lower = prompt.toLowerCase();
   const hasAttachments = attachments.length > 0;
+  const isCalculator =
+    lower.includes("calculator") || lower.includes("calc") || prompt.includes("计算器") || prompt.includes("运算");
   const isTeamTool =
     lower.includes("team") || lower.includes("collaborat") || prompt.includes("团队") || prompt.includes("协作");
   const isCommerce =
@@ -82,60 +84,121 @@ function buildBlueprint(prompt: string, title: string, attachments: ProjectAttac
     prompt.includes("课程") ||
     prompt.includes("教育");
 
-  const audience = isTeamTool
-    ? "需要快速协同与对齐的小团队"
+  const audience = isCalculator
+    ? "需要基本计算功能的用户"
+    : isTeamTool
+      ? "需要快速协同与对齐的小团队"
+      : isCommerce
+        ? "需要聚焦销售流程的运营与商家"
+        : isLearning
+          ? "需要循序渐进学习路径的用户"
+          : "想快速验证产品方向的独立开发者";
+
+  const primaryEntity = isCalculator
+    ? "Calculation"
     : isCommerce
-      ? "需要聚焦售卖流程的运营与商家"
+      ? "Product"
       : isLearning
-        ? "需要循序渐进学习路径的用户"
-        : "想快速验证产品方向的独立开发者";
+        ? "Course"
+        : isTeamTool
+          ? "Task"
+          : "Idea";
 
-  const primaryEntity = isCommerce ? "商品" : isLearning ? "课程" : isTeamTool ? "工作区" : "想法";
-  const screens = [
-    {
-      name: "需求控制台",
-      purpose: "接收用户目标与约束，并展示当前生成状态。",
-      interactions: ["提交需求", "查看 Agent 进度", "重新生成"]
-    },
-    {
-      name: "生成工作区",
-      purpose: "展示应用结构、主要流程和建议下一步。",
-      interactions: ["查看页面结构", "打开代码片段", "保存项目"]
-    },
-    {
-      name: hasAttachments ? "参考素材面板" : "项目记录",
-      purpose: hasAttachments ? "集中查看上传的文档和图片，并将它们作为方案参考。" : "保存每次生成结果，方便横向对比与继续迭代。",
-      interactions: hasAttachments ? ["浏览文档摘要", "查看图片参考", "回到需求编辑"] : ["浏览历史结果", "重新打开项目", "清理旧草稿"]
-    }
-  ];
+  const screens = isCalculator
+    ? [
+        {
+          name: "计算器主界面",
+          purpose: "显示输入和结果，提供数字和运算符按钮。",
+          interactions: ["点击数字按钮", "点击运算符", "点击等号计算结果", "点击清除重置"]
+        },
+        {
+          name: "历史记录",
+          purpose: "查看最近计算结果，支持继续引用历史表达式。",
+          interactions: ["查看最近记录", "再次使用表达式", "清理历史"]
+        },
+        {
+          name: "设置",
+          purpose: "切换主题和显示方式，调整使用体验。",
+          interactions: ["切换主题", "调整显示精度", "开启快捷键"]
+        }
+      ]
+    : [
+        {
+          name: "需求控制台",
+          purpose: "接收用户目标与约束，并展示当前生成状态。",
+          interactions: ["提交需求", "查看 Agent 进度", "重新生成"]
+        },
+        {
+          name: "生成工作区",
+          purpose: "展示应用结构、主要流程和建议下一步。",
+          interactions: ["查看页面结构", "打开代码片段", "保存项目"]
+        },
+        {
+          name: hasAttachments ? "参考素材面板" : "项目记录",
+          purpose: hasAttachments
+            ? "集中查看上传的文档和图片，并将它们作为方案参考。"
+            : "保存每次生成结果，方便横向对比与继续迭代。",
+          interactions: hasAttachments
+            ? ["浏览文档摘要", "查看图片参考", "回到需求编辑"]
+            : ["浏览历史结果", "重新打开项目", "清理旧草稿"]
+        }
+      ];
 
-  const dataModel = [
-    {
-      entity: primaryEntity,
-      fields: ["id", "title", "status", "summary", "createdAt", "updatedAt"]
-    },
-    {
-      entity: "Agent执行记录",
-      fields: ["id", "projectId", "agentKey", "status", "summary", "output"]
-    },
-    {
-      entity: hasAttachments ? "参考素材" : "产物",
-      fields: hasAttachments ? ["id", "projectId", "kind", "name", "mimeType", "snippet"] : ["id", "projectId", "kind", "name", "content"]
-    }
-  ];
+  const dataModel = isCalculator
+    ? [
+        {
+          entity: "Calculation",
+          fields: ["expression", "result", "timestamp"]
+        },
+        {
+          entity: "Preference",
+          fields: ["theme", "precision", "keyboardEnabled"]
+        },
+        {
+          entity: "Session",
+          fields: ["id", "createdAt", "lastAction"]
+        }
+      ]
+    : [
+        {
+          entity: primaryEntity,
+          fields: ["id", "title", "status", "summary", "createdAt", "updatedAt"]
+        },
+        {
+          entity: "AgentExecutionRecord",
+          fields: ["id", "projectId", "agentKey", "status", "summary", "output"]
+        },
+        {
+          entity: hasAttachments ? "Attachment" : "Artifact",
+          fields: hasAttachments
+            ? ["id", "projectId", "kind", "name", "mimeType", "snippet"]
+            : ["id", "projectId", "kind", "name", "content"]
+        }
+      ];
 
-  return {
+  const extensionIdeas = isCalculator
+    ? ["增加历史记录筛选", "支持科学计算", "加入键盘快捷键"]
+    : [
+        hasAttachments ? "给图片和文档补充自动摘要、OCR 与标签能力。" : "把生成结果进一步拆成可编辑的页面与组件级产物。",
+        "补上用户登录与权限控制，支持多人查看同一个项目。",
+        "增加一键导出仓库或部署预览的能力。"
+      ];
+
+  const blueprint: AppBlueprint = {
     audience,
-    valueProposition: hasAttachments
-      ? `${title} 会结合这次上传的 ${attachments.length} 个参考素材，把模糊需求整理成页面结构、交互重点和可复看的结果。`
-      : `${title} 会把模糊的需求整理成清晰流程，给出页面结构、下一步动作、可保存状态和可复看的结果。`,
+    valueProposition: isCalculator
+      ? "提供简洁易用的加减乘除计算能力，并支持结果回看。"
+      : hasAttachments
+        ? `${title} 会结合这次上传的 ${attachments.length} 个参考素材，把模糊需求整理成页面结构、交互重点和可复看的结果。`
+        : `${title} 会把模糊的需求整理成清晰流程，给出页面结构、下一步动作、可保存状态和可复看的结果。`,
     screens,
     dataModel,
-    extensionIdeas: [
-      hasAttachments ? "给图片和文档补充自动摘要、OCR 与标签能力。" : "把生成结果进一步拆成可编辑的页面与组件级产物。",
-      "补上用户登录与权限控制，支持多人查看同一个项目。",
-      "增加一键导出仓库或部署预览的能力。"
-    ]
+    extensionIdeas
+  };
+
+  return {
+    ...blueprint,
+    previewSchema: buildPreviewSchema(prompt, title, blueprint, attachments)
   };
 }
 

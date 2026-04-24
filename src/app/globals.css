@@ -1151,6 +1151,363 @@ select {
     var(--panel);
 }
 
+.rendered-preview-card,
+.rendered-preview-toolbar,
+.rendered-preview-title,
+.rendered-preview-actions,
+.rendered-preview-tabs,
+.rendered-preview-canvas,
+.rendered-preview-section,
+.rendered-preview-hero-copy,
+.rendered-preview-badges,
+.rendered-preview-inline-actions,
+.rendered-preview-form-grid,
+.rendered-preview-field,
+.rendered-preview-stats,
+.rendered-preview-card-grid,
+.rendered-preview-checklist,
+.rendered-preview-section-header,
+.rendered-preview-kanban,
+.rendered-preview-kanban-column,
+.rendered-preview-kanban-cards,
+.rendered-preview-calculator-display,
+.rendered-preview-keypad,
+.rendered-preview-history,
+.rendered-preview-table-wrap {
+  display: grid;
+}
+
+.rendered-preview-card {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 188, 103, 0.08), transparent 18rem),
+    rgba(20, 15, 11, 0.46);
+}
+
+.rendered-preview-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.rendered-preview-title {
+  gap: 6px;
+}
+
+.rendered-preview-title h3,
+.rendered-preview-section h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.rendered-preview-title p,
+.rendered-preview-section p,
+.rendered-preview-field span,
+.rendered-preview-stat-card span,
+.rendered-preview-card span,
+.rendered-preview-card p,
+.rendered-preview-history span,
+.rendered-preview-kanban-header span,
+.rendered-preview-result-box span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.rendered-preview-actions,
+.rendered-preview-inline-actions,
+.rendered-preview-badges {
+  gap: 10px;
+  align-content: start;
+}
+
+.rendered-preview-actions,
+.rendered-preview-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.rendered-preview-action {
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.rendered-preview-tabs {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.rendered-preview-tab {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.rendered-preview-tab strong {
+  font-size: 0.92rem;
+}
+
+.rendered-preview-tab span {
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.rendered-preview-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 188, 103, 0.28);
+}
+
+.rendered-preview-tab.active {
+  border-color: rgba(255, 188, 103, 0.44);
+  background: linear-gradient(180deg, rgba(255, 188, 103, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.rendered-preview-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(143, 224, 186, 0.18);
+  border-radius: 16px;
+  color: var(--green);
+  background: rgba(143, 224, 186, 0.08);
+}
+
+.rendered-preview-canvas {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rendered-preview-section {
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(255, 225, 180, 0.14);
+  border-radius: 22px;
+  background: rgba(30, 22, 15, 0.84);
+}
+
+.rendered-preview-hero,
+.rendered-preview-table-shell,
+.rendered-preview-kanban-shell,
+.rendered-preview-calculator {
+  grid-column: 1 / -1;
+}
+
+.rendered-preview-hero {
+  color: var(--ink);
+  background: linear-gradient(135deg, #ffbf73 0%, #ffd8a8 55%, #fff1db 100%);
+}
+
+.rendered-preview-hero .eyebrow {
+  color: #5e3a08;
+}
+
+.rendered-preview-hero h3,
+.rendered-preview-hero p {
+  color: #2f1c0d;
+}
+
+.rendered-preview-badges {
+  grid-template-columns: repeat(auto-fit, minmax(90px, max-content));
+}
+
+.rendered-preview-badges.subtle .chip {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rendered-preview-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rendered-preview-field {
+  gap: 6px;
+}
+
+.rendered-preview-field input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  outline: none;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rendered-preview-field input:focus {
+  border-color: rgba(255, 188, 103, 0.42);
+}
+
+.rendered-preview-stats {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.rendered-preview-stat-card,
+.rendered-preview-card,
+.rendered-preview-result-box,
+.rendered-preview-kanban-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rendered-preview-stat-card strong,
+.rendered-preview-result-box strong {
+  font-size: 1.14rem;
+  line-height: 1.1;
+}
+
+.rendered-preview-card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.rendered-preview-card strong,
+.rendered-preview-kanban-header strong {
+  color: var(--text);
+}
+
+.rendered-preview-checklist {
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rendered-preview-static-list li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rendered-preview-static-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.rendered-preview-section-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.rendered-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.rendered-preview-table th,
+.rendered-preview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 225, 180, 0.12);
+  text-align: left;
+}
+
+.rendered-preview-table th {
+  color: var(--text);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rendered-preview-kanban {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.rendered-preview-kanban-column {
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rendered-preview-kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rendered-preview-kanban-cards {
+  gap: 10px;
+}
+
+.rendered-preview-calculator-display {
+  grid-template-columns: minmax(0, 1.2fr) 180px;
+  gap: 12px;
+}
+
+.rendered-preview-keypad {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rendered-preview-key {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.rendered-preview-key.operator {
+  color: var(--accent-strong);
+}
+
+.rendered-preview-key.confirm {
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.rendered-preview-key.wide {
+  grid-column: span 2;
+}
+
+.rendered-preview-history {
+  gap: 8px;
+}
+
+.rendered-preview-history ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rendered-preview-history li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .runtime-preview-card,
 .runtime-preview-header {
   display: grid;
@@ -1719,6 +2076,14 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .rendered-preview-toolbar,
+  .rendered-preview-section-header,
+  .rendered-preview-calculator-display,
+  .rendered-preview-canvas,
+  .rendered-preview-form-grid {
+    grid-template-columns: 1fr;
+  }
+
   .projects-toolbar-meta {
     grid-auto-flow: row;
   }
@@ -1765,6 +2130,13 @@ select {
 
   .model-strip article,
   .timeline-step {
+    grid-template-columns: 1fr;
+  }
+
+  .rendered-preview-tabs,
+  .rendered-preview-stats,
+  .rendered-preview-card-grid,
+  .rendered-preview-kanban {
     grid-template-columns: 1fr;
   }
 

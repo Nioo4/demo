@@ -1,6 +1,19 @@
 import { buildAttachmentContext } from "./attachments";
 import { generateMockProject } from "./mock-generator";
-import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject, ProjectAttachment } from "./types";
+import type {
+  AgentStep,
+  AppBlueprint,
+  GeneratedCode,
+  GenerationProject,
+  PreviewCard,
+  PreviewField,
+  PreviewKanbanColumn,
+  PreviewMetric,
+  PreviewPage,
+  PreviewSchema,
+  PreviewSection,
+  ProjectAttachment
+} from "./types";
 
 type AiProvider = "openai" | "deepseek";
 
@@ -21,7 +34,8 @@ const SYSTEM_PROMPT = `You are generating output for an AI-native app builder de
 Return only JSON that matches the provided schema.
 Use clear, practical product language.
 Keep code files concise but realistic.
-Match the language of the user's prompt for user-facing text fields.`;
+Match the language of the user's prompt for user-facing text fields.
+The preview schema must describe a visually renderable UI, not just commentary.`;
 
 const DEEPSEEK_JSON_EXAMPLE = `{
   "title": "Launch Planner",
@@ -51,6 +65,38 @@ const DEEPSEEK_JSON_EXAMPLE = `{
       { "entity": "Milestone", "fields": ["id", "projectId", "title", "dueDate"] },
       { "entity": "Task", "fields": ["id", "milestoneId", "title", "status"] }
     ],
+    "previewSchema": {
+      "defaultPageId": "workspace",
+      "pages": [
+        {
+          "id": "workspace",
+          "title": "Launch Workspace",
+          "summary": "Show the core workflow and launch controls.",
+          "primaryAction": "Create launch task",
+          "secondaryAction": "Open timeline",
+          "sections": [
+            {
+              "id": "hero",
+              "type": "hero",
+              "title": "Launch Planner",
+              "description": "Coordinate milestones, tasks, and launch assets in one place.",
+              "badges": ["Launch workflow", "Team ready"],
+              "primaryAction": "Start planning",
+              "secondaryAction": "Review notes"
+            },
+            {
+              "id": "launch-metrics",
+              "type": "stats",
+              "title": "Launch metrics",
+              "metrics": [
+                { "label": "Milestones", "value": "4" },
+                { "label": "Open tasks", "value": "12" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "extensionIdeas": ["Add auth", "Export launch plan", "Add analytics"]
   },
   "generatedCode": {
@@ -68,6 +114,143 @@ const DEEPSEEK_JSON_EXAMPLE = `{
   ]
 }`;
 
+const PREVIEW_SECTION_TYPES = ["hero", "form", "stats", "cardGrid", "checklist", "table", "kanban", "calculator"] as const;
+const PREVIEW_FIELD_INPUT_TYPES = ["text", "number", "email", "search"] as const;
+
+const PREVIEW_SCHEMA_DEFINITION = {
+  type: "object",
+  additionalProperties: false,
+  required: ["pages"],
+  properties: {
+    defaultPageId: { type: "string" },
+    pages: {
+      type: "array",
+      minItems: 1,
+      maxItems: 4,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "title", "summary", "sections"],
+        properties: {
+          id: { type: "string", minLength: 2 },
+          title: { type: "string", minLength: 2 },
+          summary: { type: "string", minLength: 4 },
+          primaryAction: { type: "string" },
+          secondaryAction: { type: "string" },
+          sections: {
+            type: "array",
+            minItems: 2,
+            maxItems: 5,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["id", "type", "title"],
+              properties: {
+                id: { type: "string", minLength: 2 },
+                type: { type: "string", enum: [...PREVIEW_SECTION_TYPES] },
+                title: { type: "string", minLength: 2 },
+                description: { type: "string" },
+                badges: {
+                  type: "array",
+                  maxItems: 4,
+                  items: { type: "string", minLength: 1 }
+                },
+                primaryAction: { type: "string" },
+                secondaryAction: { type: "string" },
+                items: {
+                  type: "array",
+                  maxItems: 8,
+                  items: { type: "string", minLength: 1 }
+                },
+                metrics: {
+                  type: "array",
+                  maxItems: 6,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["label", "value"],
+                    properties: {
+                      label: { type: "string", minLength: 1 },
+                      value: { type: "string", minLength: 1 }
+                    }
+                  }
+                },
+                cards: {
+                  type: "array",
+                  maxItems: 8,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["title", "description"],
+                    properties: {
+                      title: { type: "string", minLength: 1 },
+                      description: { type: "string", minLength: 1 },
+                      meta: { type: "string" }
+                    }
+                  }
+                },
+                fields: {
+                  type: "array",
+                  maxItems: 6,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["id", "label", "inputType", "placeholder"],
+                    properties: {
+                      id: { type: "string", minLength: 1 },
+                      label: { type: "string", minLength: 1 },
+                      inputType: { type: "string", enum: [...PREVIEW_FIELD_INPUT_TYPES] },
+                      placeholder: { type: "string", minLength: 1 },
+                      initialValue: { type: "string" }
+                    }
+                  }
+                },
+                columns: {
+                  type: "array",
+                  maxItems: 6,
+                  items: { type: "string", minLength: 1 }
+                },
+                rows: {
+                  type: "array",
+                  maxItems: 8,
+                  items: {
+                    type: "array",
+                    maxItems: 6,
+                    items: { type: "string" }
+                  }
+                },
+                board: {
+                  type: "array",
+                  maxItems: 4,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["name", "cards"],
+                    properties: {
+                      name: { type: "string", minLength: 1 },
+                      cards: {
+                        type: "array",
+                        maxItems: 6,
+                        items: { type: "string", minLength: 1 }
+                      }
+                    }
+                  }
+                },
+                presetExpression: { type: "string" },
+                history: {
+                  type: "array",
+                  maxItems: 6,
+                  items: { type: "string", minLength: 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} as const;
+
 const PROJECT_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -78,7 +261,7 @@ const PROJECT_SCHEMA = {
     blueprint: {
       type: "object",
       additionalProperties: false,
-      required: ["audience", "valueProposition", "screens", "dataModel", "extensionIdeas"],
+      required: ["audience", "valueProposition", "screens", "dataModel", "previewSchema", "extensionIdeas"],
       properties: {
         audience: { type: "string", minLength: 3 },
         valueProposition: { type: "string", minLength: 8 },
@@ -121,6 +304,7 @@ const PROJECT_SCHEMA = {
             }
           }
         },
+        previewSchema: PREVIEW_SCHEMA_DEFINITION,
         extensionIdeas: {
           type: "array",
           minItems: 2,
@@ -233,7 +417,7 @@ async function generateOpenAiProject(prompt: string, attachments: ProjectAttachm
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `User prompt:\n${promptForModel}\n\nGenerate the app blueprint, generated code files, and four ordered agent steps.`
+          content: `User prompt:\n${promptForModel}\n\nGenerate the app blueprint, a renderable preview schema, generated code files, and four ordered agent steps.`
         }
       ],
       text: {
@@ -300,7 +484,7 @@ ${DEEPSEEK_JSON_EXAMPLE}`
         },
         {
           role: "user",
-          content: `User prompt:\n${promptForModel}\n\nGenerate fresh json for the app blueprint, generated code files, and four ordered agent steps.`
+          content: `User prompt:\n${promptForModel}\n\nGenerate fresh json for the app blueprint, a renderable preview schema, generated code files, and four ordered agent steps.`
         }
       ]
     })
@@ -384,6 +568,7 @@ function normalizeBlueprint(raw: unknown, fallback: AppBlueprint): AppBlueprint 
         .slice(0, 6)
     : [];
 
+  const previewSchema = normalizePreviewSchema(raw.previewSchema, fallback.previewSchema ?? null);
   const extensionIdeas = toStringArray(raw.extensionIdeas, 2, 4);
 
   return {
@@ -391,6 +576,7 @@ function normalizeBlueprint(raw: unknown, fallback: AppBlueprint): AppBlueprint 
     valueProposition: asNonEmptyString(raw.valueProposition) ?? fallback.valueProposition,
     screens: screens.length > 0 ? screens : fallback.screens,
     dataModel: dataModel.length > 0 ? dataModel : fallback.dataModel,
+    previewSchema,
     extensionIdeas: extensionIdeas.length > 0 ? extensionIdeas : fallback.extensionIdeas
   };
 }
@@ -489,6 +675,244 @@ function normalizeDataModel(raw: unknown) {
   return {
     entity,
     fields
+  };
+}
+
+function normalizePreviewSchema(raw: unknown, fallback: PreviewSchema | null): PreviewSchema | null {
+  if (!isRecord(raw)) {
+    return fallback;
+  }
+
+  const pages = Array.isArray(raw.pages)
+    ? raw.pages
+        .flatMap((page) => {
+          const normalized = normalizePreviewPage(page);
+          return normalized ? [normalized] : [];
+        })
+        .slice(0, 4)
+    : [];
+
+  if (pages.length === 0) {
+    return fallback;
+  }
+
+  const defaultPageId = asNonEmptyString(raw.defaultPageId);
+  return {
+    defaultPageId: defaultPageId && pages.some((page) => page.id === defaultPageId) ? defaultPageId : pages[0].id,
+    pages
+  };
+}
+
+function normalizePreviewPage(raw: unknown): PreviewPage | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const id = asNonEmptyString(raw.id);
+  const title = asNonEmptyString(raw.title);
+  const summary = asNonEmptyString(raw.summary);
+  const sections = Array.isArray(raw.sections)
+    ? raw.sections
+        .flatMap((section) => {
+          const normalized = normalizePreviewSection(section);
+          return normalized ? [normalized] : [];
+        })
+        .slice(0, 5)
+    : [];
+
+  if (!id || !title || !summary || sections.length === 0) {
+    return null;
+  }
+
+  return {
+    id,
+    title,
+    summary,
+    ...(asNonEmptyString(raw.primaryAction) ? { primaryAction: asNonEmptyString(raw.primaryAction) as string } : {}),
+    ...(asNonEmptyString(raw.secondaryAction) ? { secondaryAction: asNonEmptyString(raw.secondaryAction) as string } : {}),
+    sections
+  };
+}
+
+function normalizePreviewSection(raw: unknown): PreviewSection | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const id = asNonEmptyString(raw.id);
+  const type = toPreviewSectionType(raw.type);
+  const title = asNonEmptyString(raw.title);
+
+  if (!id || !type || !title) {
+    return null;
+  }
+
+  return {
+    id,
+    type,
+    title,
+    ...(asNonEmptyString(raw.description) ? { description: asNonEmptyString(raw.description) as string } : {}),
+    ...(toStringArray(raw.badges, 1, 4).length > 0 ? { badges: toStringArray(raw.badges, 1, 4) } : {}),
+    ...(asNonEmptyString(raw.primaryAction) ? { primaryAction: asNonEmptyString(raw.primaryAction) as string } : {}),
+    ...(asNonEmptyString(raw.secondaryAction) ? { secondaryAction: asNonEmptyString(raw.secondaryAction) as string } : {}),
+    ...(toStringArray(raw.items, 1, 8).length > 0 ? { items: toStringArray(raw.items, 1, 8) } : {}),
+    ...(normalizePreviewMetrics(raw.metrics) ? { metrics: normalizePreviewMetrics(raw.metrics) } : {}),
+    ...(normalizePreviewCards(raw.cards) ? { cards: normalizePreviewCards(raw.cards) } : {}),
+    ...(normalizePreviewFields(raw.fields) ? { fields: normalizePreviewFields(raw.fields) } : {}),
+    ...(toStringArray(raw.columns, 1, 6).length > 0 ? { columns: toStringArray(raw.columns, 1, 6) } : {}),
+    ...(normalizePreviewRows(raw.rows) ? { rows: normalizePreviewRows(raw.rows) } : {}),
+    ...(normalizePreviewBoard(raw.board) ? { board: normalizePreviewBoard(raw.board) } : {}),
+    ...(asNonEmptyString(raw.presetExpression)
+      ? { presetExpression: asNonEmptyString(raw.presetExpression) as string }
+      : {}),
+    ...(toStringArray(raw.history, 1, 6).length > 0 ? { history: toStringArray(raw.history, 1, 6) } : {})
+  };
+}
+
+function normalizePreviewMetrics(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const metrics = raw
+    .map((item) => normalizePreviewMetric(item))
+    .filter((item): item is PreviewMetric => item !== null)
+    .slice(0, 6);
+
+  return metrics.length > 0 ? metrics : undefined;
+}
+
+function normalizePreviewMetric(raw: unknown) {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const label = asNonEmptyString(raw.label);
+  const value = asNonEmptyString(raw.value);
+
+  if (!label || !value) {
+    return null;
+  }
+
+  return {
+    label,
+    value
+  };
+}
+
+function normalizePreviewCards(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const cards = raw
+    .flatMap((item) => {
+      const normalized = normalizePreviewCard(item);
+      return normalized ? [normalized] : [];
+    })
+    .slice(0, 8);
+
+  return cards.length > 0 ? cards : undefined;
+}
+
+function normalizePreviewCard(raw: unknown): PreviewCard | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const title = asNonEmptyString(raw.title);
+  const description = asNonEmptyString(raw.description);
+
+  if (!title || !description) {
+    return null;
+  }
+
+  return {
+    title,
+    description,
+    ...(asNonEmptyString(raw.meta) ? { meta: asNonEmptyString(raw.meta) as string } : {})
+  };
+}
+
+function normalizePreviewFields(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const fields = raw
+    .flatMap((item) => {
+      const normalized = normalizePreviewField(item);
+      return normalized ? [normalized] : [];
+    })
+    .slice(0, 6);
+
+  return fields.length > 0 ? fields : undefined;
+}
+
+function normalizePreviewField(raw: unknown): PreviewField | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const id = asNonEmptyString(raw.id);
+  const label = asNonEmptyString(raw.label);
+  const inputType = toPreviewFieldInputType(raw.inputType);
+  const placeholder = asNonEmptyString(raw.placeholder);
+
+  if (!id || !label || !inputType || !placeholder) {
+    return null;
+  }
+
+  return {
+    id,
+    label,
+    inputType,
+    placeholder,
+    ...(asNonEmptyString(raw.initialValue) ? { initialValue: asNonEmptyString(raw.initialValue) as string } : {})
+  };
+}
+
+function normalizePreviewRows(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const rows = raw
+    .map((row) => (Array.isArray(row) ? row.filter((item): item is string => typeof item === "string").slice(0, 6) : []))
+    .filter((row) => row.length > 0)
+    .slice(0, 8);
+
+  return rows.length > 0 ? rows : undefined;
+}
+
+function normalizePreviewBoard(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const board = raw
+    .map((item) => normalizePreviewBoardColumn(item))
+    .filter((item): item is PreviewKanbanColumn => item !== null)
+    .slice(0, 4);
+
+  return board.length > 0 ? board : undefined;
+}
+
+function normalizePreviewBoardColumn(raw: unknown) {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const name = asNonEmptyString(raw.name);
+  const cards = toStringArray(raw.cards, 1, 6);
+
+  if (!name || cards.length === 0) {
+    return null;
+  }
+
+  return {
+    name,
+    cards
   };
 }
 
@@ -639,6 +1063,31 @@ function sanitizeTitle(value: string) {
 
 function toAgentKey(value: unknown): AgentStep["key"] | null {
   if (value === "planner" || value === "ux" || value === "coder" || value === "qa") {
+    return value;
+  }
+
+  return null;
+}
+
+function toPreviewSectionType(value: unknown): PreviewSection["type"] | null {
+  if (
+    value === "hero" ||
+    value === "form" ||
+    value === "stats" ||
+    value === "cardGrid" ||
+    value === "checklist" ||
+    value === "table" ||
+    value === "kanban" ||
+    value === "calculator"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
+function toPreviewFieldInputType(value: unknown): PreviewField["inputType"] | null {
+  if (value === "text" || value === "number" || value === "email" || value === "search") {
     return value;
   }
 
