@@ -206,8 +206,8 @@ select {
 .empty-state h2,
 .mission-panel h2 {
   margin: 0;
-  font-size: clamp(1.4rem, 2vw, 2rem);
-  line-height: 1.15;
+  font-size: clamp(1.18rem, 1.45vw, 1.58rem);
+  line-height: 1.12;
 }
 
 .sidebar-user-email {
@@ -241,7 +241,7 @@ select {
 
 .topbar-title {
   margin: 0;
-  font-size: clamp(1.35rem, 1.8vw, 1.8rem);
+  font-size: clamp(1.12rem, 1.3vw, 1.42rem);
   letter-spacing: -0.04em;
 }
 
@@ -303,12 +303,12 @@ select {
 }
 
 .page-slot {
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
 .page-stack,
 .builder-layout {
-  margin-bottom: 30px;
+  margin-bottom: 22px;
 }
 
 .hero-card,
@@ -321,12 +321,12 @@ select {
 .section-heading,
 .builder-hero,
 .details-header {
-  padding: 24px;
+  padding: 20px;
 }
 
 .hero-card {
   display: grid;
-  gap: 24px;
+  gap: 20px;
   background:
     radial-gradient(circle at top right, rgba(255, 188, 103, 0.14), transparent 20rem),
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
@@ -338,8 +338,8 @@ select {
 .section-heading h1,
 .details-header h1 {
   margin: 0;
-  font-size: clamp(1.7rem, 3vw, 2.8rem);
-  line-height: 1.05;
+  font-size: clamp(1.42rem, 2.3vw, 2.2rem);
+  line-height: 1.04;
   letter-spacing: -0.05em;
 }
 
@@ -348,7 +348,7 @@ select {
 .section-heading p {
   max-width: 880px;
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.91rem;
 }
 
 .hero-actions {
@@ -554,7 +554,7 @@ select {
 .section-heading,
 .details-header {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   background:
     radial-gradient(circle at top right, rgba(255, 188, 103, 0.13), transparent 18rem),
     var(--panel-strong);
@@ -571,7 +571,7 @@ select {
 
 .details-header-layout {
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -618,11 +618,11 @@ select {
 }
 
 .builder-hero-compact {
-  padding: 18px 22px;
+  padding: 16px 20px;
 }
 
 .builder-hero-compact h1 {
-  font-size: clamp(1.45rem, 2vw, 2rem);
+  font-size: clamp(1.24rem, 1.55vw, 1.72rem);
   line-height: 1.08;
 }
 
@@ -1050,7 +1050,7 @@ select {
 
 .builder-project-toolbar-copy h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+  font-size: clamp(1.08rem, 1.35vw, 1.42rem);
   line-height: 1.1;
 }
 
@@ -1101,8 +1101,8 @@ select {
 
 .panel-heading {
   display: grid;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .timeline-step {
@@ -1210,7 +1210,7 @@ select {
 
 .preview-hero h2 {
   margin: 0;
-  font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+  font-size: clamp(1.34rem, 2vw, 1.92rem);
   line-height: 1.02;
   letter-spacing: -0.05em;
 }
@@ -1224,7 +1224,7 @@ select {
   display: grid;
   align-content: start;
   gap: 12px;
-  min-height: 176px;
+  min-height: 154px;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -1790,14 +1790,14 @@ select {
     min-width: 0;
   }
 
-  .topbar-title {
-    font-size: 1.35rem;
+.topbar-title {
+    font-size: 1.18rem;
   }
 
   .hero-card h1,
   .builder-hero h1,
   .section-heading h1,
   .details-header h1 {
-    font-size: 1.7rem;
+    font-size: 1.48rem;
   }
 }

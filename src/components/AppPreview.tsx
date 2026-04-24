@@ -4,6 +4,50 @@ type AppPreviewProps = {
   project: GenerationProject | null;
 };
 
+const ENTITY_LABELS: Record<string, string> = {
+  agentexecutionrecord: "Agent 执行记录",
+  agentrun: "Agent 执行记录",
+  artifact: "产物",
+  artifacts: "产物",
+  calculation: "计算记录",
+  course: "课程",
+  idea: "想法",
+  milestone: "里程碑",
+  note: "笔记",
+  notes: "笔记",
+  product: "商品",
+  project: "项目",
+  record: "记录",
+  session: "会话",
+  task: "任务",
+  user: "用户",
+  workspace: "工作区"
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  createdat: "创建时间",
+  content: "内容",
+  duedate: "截止时间",
+  expression: "算式",
+  filepath: "文件路径",
+  id: "ID",
+  kind: "类型",
+  mimetype: "文件类型",
+  milestoneid: "里程碑ID",
+  name: "名称",
+  output: "输出",
+  projectid: "项目ID",
+  result: "结果",
+  snippet: "摘要片段",
+  status: "状态",
+  summary: "摘要",
+  taskid: "任务ID",
+  timestamp: "时间",
+  title: "标题",
+  updatedat: "更新时间",
+  userid: "用户ID"
+};
+
 export function AppPreview({ project }: AppPreviewProps) {
   if (!project) {
     return (
@@ -48,8 +92,8 @@ export function AppPreview({ project }: AppPreviewProps) {
       <div className="model-strip">
         {project.blueprint.dataModel.map((model) => (
           <article key={model.entity}>
-            <strong>{model.entity}</strong>
-            <span>{model.fields.join(" / ")}</span>
+            <strong>{localizeEntityLabel(model.entity)}</strong>
+            <span>{model.fields.map(localizeFieldLabel).join(" / ")}</span>
           </article>
         ))}
       </div>
@@ -61,4 +105,30 @@ export function AppPreview({ project }: AppPreviewProps) {
       </ul>
     </section>
   );
+}
+
+function localizeEntityLabel(value: string) {
+  if (containsChinese(value)) {
+    return value;
+  }
+
+  const normalized = normalizeKey(value);
+  return ENTITY_LABELS[normalized] ?? value;
+}
+
+function localizeFieldLabel(value: string) {
+  if (containsChinese(value)) {
+    return value;
+  }
+
+  const normalized = normalizeKey(value);
+  return FIELD_LABELS[normalized] ?? value;
+}
+
+function normalizeKey(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function containsChinese(value: string) {
+  return /[\u4e00-\u9fff]/.test(value);
 }
