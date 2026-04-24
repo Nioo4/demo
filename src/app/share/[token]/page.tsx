@@ -3,6 +3,8 @@ import Link from "next/link";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { AppPreview } from "@/components/AppPreview";
 import { GeneratedCodePanel } from "@/components/GeneratedCodePanel";
+import { ProjectAttachmentsPanel } from "@/components/ProjectAttachmentsPanel";
+import { ProjectArtifactsPanel } from "@/components/ProjectArtifactsPanel";
 import { getPublicProjectByShareToken } from "@/lib/server-store";
 
 type SharedProjectPageProps = {
@@ -37,7 +39,7 @@ export default async function SharedProjectPage({ params }: SharedProjectPagePro
           <p className="eyebrow">公开分享</p>
           <h1>{project.title}</h1>
           <p>{project.prompt}</p>
-          <p className="muted">这是一个只读分享页。你可以查看结构、流程和生成代码，但不能修改项目内容。</p>
+          <p className="muted">这是一个只读分享页。你可以查看结构、流程、参考素材和生成代码，但不能修改项目内容。</p>
         </div>
 
         <div className="detail-actions">
@@ -49,6 +51,9 @@ export default async function SharedProjectPage({ params }: SharedProjectPagePro
           </Link>
         </div>
       </section>
+
+      <ProjectAttachmentsPanel attachments={project.attachments} />
+      <ProjectArtifactsPanel artifacts={project.artifacts} />
 
       <section className="workspace-grid">
         <div className="main-column">

@@ -1,6 +1,7 @@
+import { buildAttachmentContext, normalizeProjectAttachments } from "./attachments";
 import { generateLlmProject, getActiveAiModel, getActiveAiProvider, isAiConfigured } from "./ai-generator";
 import { generateMockProject } from "./mock-generator";
-import type { GenerationMode, GenerationProject } from "./types";
+import type { GenerationMode, GenerationProject, ProjectAttachment } from "./types";
 
 const LLM_PROVIDER_ALIASES = new Set(["llm", "openai", "deepseek", "real", "live"]);
 
@@ -29,8 +30,13 @@ export function getDefaultGenerationMode(): GenerationMode {
   return "mock";
 }
 
-export async function generateProjectFromPrompt(prompt: string, requestedMode?: GenerationMode) {
+export async function generateProjectFromPrompt(
+  prompt: string,
+  requestedMode?: GenerationMode,
+  attachments: ProjectAttachment[] = []
+) {
   const mode = resolveGenerationMode(requestedMode);
+  const normalizedAttachments = normalizeProjectAttachments(attachments);
 
   if (mode === "llm") {
     if (!isLlmConfigured()) {
@@ -39,10 +45,21 @@ export async function generateProjectFromPrompt(prompt: string, requestedMode?: 
       throw new Error(`Real AI mode is selected but ${keyName} is not configured.`);
     }
 
-    return generateLlmProject(prompt);
+    return generateLlmProject(prompt, normalizedAttachments);
   }
 
-  return generateMockProject(prompt);
+  return generateMockProject(prompt, normalizedAttachments);
+}
+
+export function normalizePromptWithAttachments(prompt: string, attachments: ProjectAttachment[] = []) {
+  const normalizedAttachments = normalizeProjectAttachments(attachments);
+  const attachmentContext = buildAttachmentContext(normalizedAttachments);
+
+  return {
+    prompt: prompt.trim(),
+    attachments: normalizedAttachments,
+    modelInput: `${prompt.trim()}${attachmentContext}`.trim()
+  };
 }
 
 function resolveGenerationMode(requestedMode?: GenerationMode): GenerationMode {
@@ -78,6 +95,6 @@ export function normalizeMode(value: unknown) {
   return undefined;
 }
 
-export function buildPendingSkeleton(prompt: string): GenerationProject {
-  return generateMockProject(prompt);
+export function buildPendingSkeleton(prompt: string, attachments: ProjectAttachment[] = []): GenerationProject {
+  return generateMockProject(prompt, normalizeProjectAttachments(attachments));
 }

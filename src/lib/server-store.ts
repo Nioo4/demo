@@ -1,7 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { normalizeProjectAttachments } from "./attachments";
+import { buildProjectArtifacts } from "./project-artifacts";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "./supabase-server";
-import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject } from "./types";
+import type {
+  AgentStep,
+  AppBlueprint,
+  GeneratedCode,
+  GenerationProject,
+  ProjectArtifact,
+  ProjectAttachment
+} from "./types";
 
 type ProjectRow = {
   id: string;
@@ -14,7 +23,7 @@ type ProjectRow = {
   theme: string;
   blueprint: AppBlueprint;
   generated_code: GeneratedCode;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };
@@ -37,6 +46,16 @@ type AgentRunRow = {
   sort_order: number;
   started_at: string | null;
   completed_at: string | null;
+  created_at: string;
+};
+
+type ArtifactRow = {
+  id: string;
+  project_id: string;
+  kind: ProjectArtifact["kind"];
+  name: string;
+  content: string;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -63,6 +82,7 @@ export async function saveProject(project: GenerationProject, ownerId: string) {
   }
 
   const projectId = upsert.data.id;
+
   const removeRuns = await supabase.from("agent_runs").delete().eq("project_id", projectId);
   if (removeRuns.error) {
     throw new Error(`Failed to replace agent runs: ${removeRuns.error.message}`);
@@ -73,6 +93,19 @@ export async function saveProject(project: GenerationProject, ownerId: string) {
     const insertRuns = await supabase.from("agent_runs").insert(runRows);
     if (insertRuns.error) {
       throw new Error(`Failed to insert agent runs: ${insertRuns.error.message}`);
+    }
+  }
+
+  const removeArtifacts = await supabase.from("artifacts").delete().eq("project_id", projectId);
+  if (removeArtifacts.error) {
+    throw new Error(`Failed to replace artifacts: ${removeArtifacts.error.message}`);
+  }
+
+  const artifactRows = toArtifactRows(projectId, project);
+  if (artifactRows.length > 0) {
+    const insertArtifacts = await supabase.from("artifacts").insert(artifactRows);
+    if (insertArtifacts.error) {
+      throw new Error(`Failed to insert artifacts: ${insertArtifacts.error.message}`);
     }
   }
 
@@ -101,8 +134,13 @@ export async function listProjects(ownerId: string) {
     return [] as GenerationProject[];
   }
 
-  const runsByProject = await listAgentRunsByProjectIds(supabase, projectRows.map((row) => row.id));
-  return projectRows.map((row) => normalizeProject(row, runsByProject.get(row.id) ?? []));
+  const projectIds = projectRows.map((row) => row.id);
+  const runsByProject = await listAgentRunsByProjectIds(supabase, projectIds);
+  const artifactsByProject = await listArtifactsByProjectIds(supabase, projectIds);
+
+  return projectRows.map((row) =>
+    normalizeProject(row, runsByProject.get(row.id) ?? [], artifactsByProject.get(row.id) ?? [])
+  );
 }
 
 export async function getProject(id: string, ownerId: string) {
@@ -132,8 +170,11 @@ export async function getPublicProjectByShareToken(shareToken: string) {
     return null;
   }
 
-  const runsByProject = await listAgentRunsByProjectIds(supabase, [projectResult.data.id]);
-  return normalizeProject(projectResult.data, runsByProject.get(projectResult.data.id) ?? []);
+  const projectId = projectResult.data.id;
+  const runsByProject = await listAgentRunsByProjectIds(supabase, [projectId]);
+  const artifactsByProject = await listArtifactsByProjectIds(supabase, [projectId]);
+
+  return normalizeProject(projectResult.data, runsByProject.get(projectId) ?? [], artifactsByProject.get(projectId) ?? []);
 }
 
 export async function updateProject(id: string, patch: Partial<GenerationProject>, ownerId: string) {
@@ -148,10 +189,13 @@ export async function updateProject(id: string, patch: Partial<GenerationProject
     id: current.id,
     createdAt: current.createdAt,
     updatedAt: new Date().toISOString(),
+    attachments: patch.attachments ?? current.attachments,
+    artifacts: patch.artifacts ?? current.artifacts,
     agentSteps: patch.agentSteps ?? current.agentSteps,
     blueprint: patch.blueprint ?? current.blueprint,
     generatedCode: patch.generatedCode ?? current.generatedCode,
     isPublic: patch.isPublic ?? current.isPublic,
+    isFavorite: patch.isFavorite ?? current.isFavorite,
     shareToken: Object.prototype.hasOwnProperty.call(patch, "shareToken") ? patch.shareToken ?? null : current.shareToken
   };
 
@@ -193,7 +237,9 @@ function toProjectUpsertPayload(
     generated_code: project.generatedCode,
     metadata: {
       persistenceMode: "database",
-      savedFrom: "api"
+      savedFrom: "api",
+      attachments: project.attachments,
+      isFavorite: project.isFavorite
     },
     created_at: project.createdAt || now,
     updated_at: now
@@ -215,6 +261,18 @@ function toAgentRunRows(projectId: string, steps: AgentStep[], now: string) {
   }));
 }
 
+function toArtifactRows(projectId: string, project: GenerationProject) {
+  return buildProjectArtifacts(project).map((artifact) => ({
+    id: artifact.id,
+    project_id: projectId,
+    kind: artifact.kind,
+    name: artifact.name,
+    content: artifact.content,
+    metadata: artifact.metadata,
+    created_at: artifact.createdAt
+  }));
+}
+
 async function getProjectFromDb(supabase: SupabaseClient, id: string, ownerId: string) {
   const projectResult = await supabase
     .from("projects")
@@ -232,7 +290,9 @@ async function getProjectFromDb(supabase: SupabaseClient, id: string, ownerId: s
   }
 
   const runsByProject = await listAgentRunsByProjectIds(supabase, [id]);
-  return normalizeProject(projectResult.data, runsByProject.get(id) ?? []);
+  const artifactsByProject = await listArtifactsByProjectIds(supabase, [id]);
+
+  return normalizeProject(projectResult.data, runsByProject.get(id) ?? [], artifactsByProject.get(id) ?? []);
 }
 
 async function getExistingProjectState(supabase: SupabaseClient, projectId: string) {
@@ -299,7 +359,34 @@ async function listAgentRunsByProjectIds(supabase: SupabaseClient, projectIds: s
   return grouped;
 }
 
-function normalizeProject(project: ProjectRow, runs: AgentRunRow[]): GenerationProject {
+async function listArtifactsByProjectIds(supabase: SupabaseClient, projectIds: string[]) {
+  if (projectIds.length === 0) {
+    return new Map<string, ArtifactRow[]>();
+  }
+
+  const artifactsResult = await supabase
+    .from("artifacts")
+    .select("*")
+    .in("project_id", projectIds)
+    .order("created_at", { ascending: true });
+
+  if (artifactsResult.error) {
+    throw new Error(`Failed to list artifacts: ${artifactsResult.error.message}`);
+  }
+
+  const rows = (artifactsResult.data ?? []) as ArtifactRow[];
+  const grouped = new Map<string, ArtifactRow[]>();
+
+  for (const row of rows) {
+    const current = grouped.get(row.project_id) ?? [];
+    current.push(row);
+    grouped.set(row.project_id, current);
+  }
+
+  return grouped;
+}
+
+function normalizeProject(project: ProjectRow, runs: AgentRunRow[], artifacts: ArtifactRow[]): GenerationProject {
   const normalizedRuns = runs
     .slice()
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -312,20 +399,52 @@ function normalizeProject(project: ProjectRow, runs: AgentRunRow[]): GenerationP
       output: Array.isArray(run.output) ? run.output.filter((item): item is string => typeof item === "string") : []
     }));
 
-  return {
+  const baseProject: GenerationProject = {
     id: project.id,
     title: project.title,
     prompt: project.prompt,
     status: project.status,
     isPublic: project.is_public === true,
+    isFavorite: readProjectFavorite(project.metadata),
     shareToken: normalizeShareToken(project.share_token),
     theme: project.theme,
+    attachments: readProjectAttachments(project.metadata),
+    artifacts: [],
     blueprint: project.blueprint,
     generatedCode: project.generated_code,
     agentSteps: normalizedRuns,
     createdAt: project.created_at,
     updatedAt: project.updated_at
   };
+
+  return {
+    ...baseProject,
+    artifacts: normalizeArtifacts(artifacts, baseProject)
+  };
+}
+
+function readProjectAttachments(metadata: Record<string, unknown> | null) {
+  const rawAttachments = metadata && "attachments" in metadata ? metadata.attachments : [];
+  return normalizeProjectAttachments(rawAttachments) as ProjectAttachment[];
+}
+
+function readProjectFavorite(metadata: Record<string, unknown> | null) {
+  return metadata?.isFavorite === true;
+}
+
+function normalizeArtifacts(rows: ArtifactRow[], project: GenerationProject) {
+  if (rows.length === 0) {
+    return buildProjectArtifacts(project);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    content: row.content,
+    metadata: row.metadata ?? {},
+    createdAt: row.created_at
+  }));
 }
 
 function normalizeShareToken(value: string | null | undefined) {

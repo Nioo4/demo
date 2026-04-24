@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { normalizeProjectAttachments } from "@/lib/attachments";
 import { generateProjectFromPrompt, normalizeMode } from "@/lib/generation-service";
 import { saveProject } from "@/lib/server-store";
 import { getRequestUser } from "@/lib/supabase-server";
@@ -24,11 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "需求描述不能为空。" }, { status: 400 });
   }
 
+  const attachments = normalizeProjectAttachments(body.attachments);
   const mode = normalizeMode(body.mode);
   let project: GenerateResponse["project"];
 
   try {
-    const generatedProject = await generateProjectFromPrompt(prompt, mode);
+    const generatedProject = await generateProjectFromPrompt(prompt, mode, attachments);
     project = await saveProject(generatedProject, user.id);
   } catch (error) {
     return NextResponse.json(

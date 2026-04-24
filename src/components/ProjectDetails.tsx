@@ -8,7 +8,9 @@ import { AppPreview } from "@/components/AppPreview";
 import { AuthRequired } from "@/components/AuthRequired";
 import { useAuth } from "@/components/AuthProvider";
 import { GeneratedCodePanel } from "@/components/GeneratedCodePanel";
-import { ProjectSharePanel } from "@/components/ProjectSharePanel";
+import { ProjectAttachmentsPanel } from "@/components/ProjectAttachmentsPanel";
+import { ProjectArtifactsPanel } from "@/components/ProjectArtifactsPanel";
+import { ProjectMetaBadges, ProjectShareActions } from "@/components/ProjectSharePanel";
 import { fetchWithAuth } from "@/lib/api-client";
 import type { GenerationProject } from "@/lib/types";
 
@@ -94,25 +96,35 @@ export function ProjectDetails({ projectId }: ProjectDetailsProps) {
     );
   }
 
+  const builderHref = { pathname: "/builder", query: { projectId: project.id } };
+
   return (
     <main className="page-stack">
       <section className="details-header">
-        <div>
-          <p className="eyebrow">项目详情</p>
-          <h1>{project.title}</h1>
-          <p>{project.prompt}</p>
-        </div>
-        <div className="detail-actions">
-          <Link className="button secondary" href="/projects">
-            返回项目库
-          </Link>
-          <Link className="button secondary" href={{ pathname: "/builder", query: { projectId: project.id } }}>
-            在生成台中打开
-          </Link>
+        <div className="details-header-layout">
+          <div className="details-header-main">
+            <p className="eyebrow">项目详情</p>
+            <h1>{project.title}</h1>
+            <p>{project.prompt}</p>
+          </div>
+
+          <div className="details-header-side">
+            <ProjectMetaBadges project={project} className="detail-header-badges" />
+            <div className="detail-actions detail-actions-wide">
+              <Link className="button secondary" href="/projects">
+                返回项目库
+              </Link>
+              <Link className="button secondary" href={builderHref}>
+                在生成台中打开
+              </Link>
+              {project.status === "ready" ? <ProjectShareActions project={project} onProjectChange={setProject} /> : null}
+            </div>
+          </div>
         </div>
       </section>
 
-      <ProjectSharePanel project={project} onProjectChange={setProject} />
+      <ProjectAttachmentsPanel attachments={project.attachments} />
+      <ProjectArtifactsPanel artifacts={project.artifacts} />
 
       <section className="workspace-grid">
         <div className="main-column">

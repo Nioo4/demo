@@ -1,75 +1,76 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import type { Route } from "next";
+import { useState } from "react";
 
 import { fetchWithAuth } from "@/lib/api-client";
 import type { GenerationProject } from "@/lib/types";
-import { formatProjectVisibility } from "@/lib/ui";
+import { formatProjectStatus, formatProjectVisibility } from "@/lib/ui";
 
-type ProjectSharePanelProps = {
+type ProjectMetaBadgesProps = {
   project: GenerationProject;
-  onProjectChange: (project: GenerationProject) => void;
-  title?: string;
-  description?: string;
+  className?: string;
 };
 
-export function ProjectSharePanel({
-  project,
-  onProjectChange,
-  title = "分享设置",
-  description = "项目生成完成后，你可以在这里直接切换私有 / 公开，并复制只读分享链接。"
-}: ProjectSharePanelProps) {
+type ProjectShareActionsProps = {
+  project: GenerationProject;
+  onProjectChange: (project: GenerationProject) => void;
+  className?: string;
+};
+
+export function ProjectMetaBadges({ project, className }: ProjectMetaBadgesProps) {
+  return (
+    <div className={joinClassNames("project-badges project-meta-badges", className)}>
+      <span className="status-pill">{formatProjectStatus(project.status)}</span>
+      <span className="chip">{formatProjectVisibility(project.isPublic)}</span>
+      {project.isFavorite ? <span className="chip">已收藏</span> : null}
+      <span className="chip">{project.isPublic ? "公开链接可访问" : "仅自己可见"}</span>
+    </div>
+  );
+}
+
+export function ProjectShareActions({ project, onProjectChange, className }: ProjectShareActionsProps) {
   const [isUpdatingShare, setIsUpdatingShare] = useState(false);
-  const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
-
-  const sharePath = useMemo(() => {
-    if (!project.isPublic || !project.shareToken) {
-      return null;
-    }
-
-    return `/share/${project.shareToken}` as Route;
-  }, [project]);
 
   async function handleToggleShare() {
     if (isUpdatingShare) {
       return;
     }
 
-    setShareMessage(null);
     setCopyStatus("idle");
     setIsUpdatingShare(true);
 
     const nextIsPublic = !project.isPublic;
-    const response = await fetchWithAuth(`/api/projects/${project.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        isPublic: nextIsPublic,
-        shareToken: nextIsPublic ? project.shareToken : null
-      })
-    });
 
-    setIsUpdatingShare(false);
+    try {
+      const response = await fetchWithAuth(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          isPublic: nextIsPublic,
+          shareToken: nextIsPublic ? project.shareToken : null
+        })
+      });
 
-    const payload = (await safeParseJson(response)) as { project?: GenerationProject; error?: string } | null;
-    if (!response.ok || !payload?.project) {
-      setShareMessage(payload?.error ?? "切换分享状态失败，请稍后再试。");
-      return;
+      const payload = (await safeParseJson(response)) as { project?: GenerationProject } | null;
+      if (!response.ok || !payload?.project) {
+        throw new Error("Failed to update share state.");
+      }
+
+      onProjectChange(payload.project);
+    } catch {
+      setCopyStatus("failed");
+    } finally {
+      setIsUpdatingShare(false);
     }
-
-    onProjectChange(payload.project);
-    setShareMessage(nextIsPublic ? "公开分享已开启，新的只读链接已经生成。" : "项目已切回私有，旧分享链接已失效。");
   }
 
   async function handleCopyLink() {
-    if (!sharePath || typeof window === "undefined") {
+    if (!project.isPublic || !project.shareToken || typeof window === "undefined") {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}${sharePath}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/share/${project.shareToken}`);
       setCopyStatus("copied");
     } catch {
       setCopyStatus("failed");
@@ -77,51 +78,25 @@ export function ProjectSharePanel({
   }
 
   return (
-    <section className="panel share-panel">
-      <div className="panel-heading">
-        <p className="eyebrow">项目分享</p>
-        <h2>{title}</h2>
-        <p>{description}</p>
-      </div>
-
-      <div className="share-layout">
-        <div className="share-summary">
-          <div className="chip-row">
-            <span className="chip">{formatProjectVisibility(project.isPublic)}</span>
-            <span className="chip">{project.isPublic ? "已生成分享链接" : "仅自己可见"}</span>
-          </div>
-
-          <p className="muted">
-            {project.isPublic
-              ? "公开后，别人不登录也能通过分享页查看这个项目，但只能只读浏览。"
-              : "当前项目仍然是私有的，只有你登录后可以查看和管理。"}
-          </p>
-
-          {shareMessage ? <p className="muted">{shareMessage}</p> : null}
-        </div>
-
-        <div className="share-actions">
-          <button className="button secondary" onClick={handleToggleShare} type="button" disabled={isUpdatingShare}>
-            {isUpdatingShare ? "更新中..." : project.isPublic ? "切回私有" : "开启公开分享"}
-          </button>
-
-          {sharePath ? (
-            <>
-              <Link className="button secondary" href={sharePath} rel="noreferrer" target="_blank">
-                打开分享页
-              </Link>
-              <button className="button primary" onClick={handleCopyLink} type="button">
-                {copyStatus === "copied" ? "分享链接已复制" : copyStatus === "failed" ? "复制失败" : "复制分享链接"}
-              </button>
-            </>
-          ) : (
-            <button className="button primary" type="button" disabled>
-              开启公开分享后复制链接
-            </button>
-          )}
-        </div>
-      </div>
-    </section>
+    <div className={joinClassNames("project-share-actions-inline", className)}>
+      <button className="button secondary" onClick={handleToggleShare} type="button" disabled={isUpdatingShare}>
+        {isUpdatingShare ? "更新中..." : project.isPublic ? "切回私有项目" : "开启公开分享"}
+      </button>
+      <button
+        className="button primary"
+        onClick={handleCopyLink}
+        type="button"
+        disabled={!project.isPublic || !project.shareToken}
+      >
+        {copyStatus === "copied"
+          ? "链接已复制"
+          : copyStatus === "failed"
+            ? "复制失败"
+            : project.isPublic && project.shareToken
+              ? "复制分享链接"
+              : "开启公开分享后复制链接"}
+      </button>
+    </div>
   );
 }
 
@@ -131,4 +106,8 @@ async function safeParseJson(response: Response) {
   } catch {
     return null;
   }
+}
+
+function joinClassNames(...classNames: Array<string | undefined>) {
+  return classNames.filter(Boolean).join(" ");
 }

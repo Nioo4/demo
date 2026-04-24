@@ -1,5 +1,6 @@
+import { buildAttachmentContext } from "./attachments";
 import { generateMockProject } from "./mock-generator";
-import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject } from "./types";
+import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject, ProjectAttachment } from "./types";
 
 type AiProvider = "openai" | "deepseek";
 
@@ -204,17 +205,20 @@ export function isAiConfigured() {
     : Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 
-export async function generateLlmProject(prompt: string): Promise<GenerationProject> {
-  return getActiveAiProvider() === "deepseek" ? generateDeepSeekProject(prompt) : generateOpenAiProject(prompt);
+export async function generateLlmProject(prompt: string, attachments: ProjectAttachment[] = []): Promise<GenerationProject> {
+  return getActiveAiProvider() === "deepseek"
+    ? generateDeepSeekProject(prompt, attachments)
+    : generateOpenAiProject(prompt, attachments);
 }
 
-async function generateOpenAiProject(prompt: string): Promise<GenerationProject> {
+async function generateOpenAiProject(prompt: string, attachments: ProjectAttachment[]): Promise<GenerationProject> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("Real AI mode requires OPENAI_API_KEY in server environment variables.");
   }
 
   const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL;
+  const promptForModel = withAttachmentContext(prompt, attachments);
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -229,7 +233,7 @@ async function generateOpenAiProject(prompt: string): Promise<GenerationProject>
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `User prompt:\n${prompt.trim()}\n\nGenerate the app blueprint, generated code files, and four ordered agent steps.`
+          content: `User prompt:\n${promptForModel}\n\nGenerate the app blueprint, generated code files, and four ordered agent steps.`
         }
       ],
       text: {
@@ -258,10 +262,10 @@ async function generateOpenAiProject(prompt: string): Promise<GenerationProject>
     throw new Error("OpenAI response was not valid JSON.");
   }
 
-  return normalizeLlmProject(prompt, parsed);
+  return normalizeLlmProject(prompt, parsed, attachments);
 }
 
-async function generateDeepSeekProject(prompt: string): Promise<GenerationProject> {
+async function generateDeepSeekProject(prompt: string, attachments: ProjectAttachment[]): Promise<GenerationProject> {
   const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("Real AI mode requires DEEPSEEK_API_KEY in server environment variables.");
@@ -269,6 +273,7 @@ async function generateDeepSeekProject(prompt: string): Promise<GenerationProjec
 
   const baseUrl = (process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com").replace(/\/$/, "");
   const model = process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_DEEPSEEK_MODEL;
+  const promptForModel = withAttachmentContext(prompt, attachments);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30_000);
   const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -295,7 +300,7 @@ ${DEEPSEEK_JSON_EXAMPLE}`
         },
         {
           role: "user",
-          content: `User prompt:\n${prompt.trim()}\n\nGenerate fresh json for the app blueprint, generated code files, and four ordered agent steps.`
+          content: `User prompt:\n${promptForModel}\n\nGenerate fresh json for the app blueprint, generated code files, and four ordered agent steps.`
         }
       ]
     })
@@ -321,11 +326,11 @@ ${DEEPSEEK_JSON_EXAMPLE}`
     throw new Error("DeepSeek response was not valid JSON.");
   }
 
-  return normalizeLlmProject(prompt, parsed);
+  return normalizeLlmProject(prompt, parsed, attachments);
 }
 
-function normalizeLlmProject(prompt: string, raw: unknown): GenerationProject {
-  const fallback = generateMockProject(prompt);
+function normalizeLlmProject(prompt: string, raw: unknown, attachments: ProjectAttachment[]): GenerationProject {
+  const fallback = generateMockProject(prompt, attachments);
   if (!isRecord(raw)) {
     return fallback;
   }
@@ -343,14 +348,21 @@ function normalizeLlmProject(prompt: string, raw: unknown): GenerationProject {
     prompt: prompt.trim() || fallback.prompt,
     status: "ready",
     isPublic: false,
+    isFavorite: false,
     shareToken: null,
     theme,
+    attachments,
+    artifacts: [],
     blueprint,
     generatedCode,
     agentSteps,
     createdAt: now,
     updatedAt: now
   };
+}
+
+function withAttachmentContext(prompt: string, attachments: ProjectAttachment[]) {
+  return `${prompt.trim()}${buildAttachmentContext(attachments)}`.trim();
 }
 
 function normalizeBlueprint(raw: unknown, fallback: AppBlueprint): AppBlueprint {

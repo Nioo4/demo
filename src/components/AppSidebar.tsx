@@ -15,7 +15,7 @@ const navItems = [
   {
     href: "/builder" as Route,
     label: "生成台",
-    description: "输入需求并实时生成结果"
+    description: "输入需求、素材并生成结果"
   },
   {
     href: "/projects" as Route,
@@ -74,7 +74,7 @@ export function AppSidebar() {
             <p className="sidebar-user-email" title={user.email ?? "已登录用户"}>
               {user.email ?? "已登录用户"}
             </p>
-            <p>现在生成和保存的项目只会归属于当前账号。</p>
+            <p>现在生成和保存的项目只会归属于当前账号，长邮箱也会在这里自动换行显示。</p>
             <button className="button secondary sidebar-action" onClick={handleSignOut} type="button">
               退出登录
             </button>

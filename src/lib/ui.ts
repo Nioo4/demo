@@ -1,4 +1,4 @@
-import type { AgentStatus, GenerationMode, ProjectStatus } from "./types";
+import type { AgentStatus, GenerationMode, ProjectArtifactKind, ProjectStatus } from "./types";
 
 export function formatProjectStatus(status: ProjectStatus) {
   switch (status) {
@@ -17,6 +17,25 @@ export function formatProjectStatus(status: ProjectStatus) {
 
 export function formatProjectVisibility(isPublic: boolean) {
   return isPublic ? "公开分享" : "私有项目";
+}
+
+export function formatArtifactKind(kind: ProjectArtifactKind) {
+  switch (kind) {
+    case "blueprint":
+      return "蓝图";
+    case "component":
+      return "组件";
+    case "page":
+      return "页面";
+    case "style":
+      return "样式";
+    case "test":
+      return "测试";
+    case "note":
+      return "说明";
+    default:
+      return kind;
+  }
 }
 
 export function formatAgentStatus(status: AgentStatus) {

@@ -72,6 +72,7 @@ select {
   background: var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
 }
 
 .app-sidebar {
@@ -375,6 +376,10 @@ select {
   transform: translateY(-1px);
 }
 
+.button:active {
+  transform: translateY(0) scale(0.985);
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
@@ -391,6 +396,12 @@ select {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.button.secondary.danger {
+  color: var(--red);
+  border-color: rgba(255, 140, 120, 0.3);
+  background: rgba(255, 140, 120, 0.08);
+}
+
 .builder-status-grid,
 .home-grid,
 .workspace-grid,
@@ -403,6 +414,62 @@ select {
 .builder-focus {
   display: grid;
   gap: 16px;
+}
+
+.builder-flow {
+  display: grid;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow-stage {
+  display: grid;
+  gap: 10px;
+  min-height: 116px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.flow-stage:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 188, 103, 0.24);
+}
+
+.flow-stage.active {
+  border-color: rgba(255, 188, 103, 0.45);
+  background: linear-gradient(180deg, rgba(255, 188, 103, 0.12), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+}
+
+.flow-stage.complete {
+  border-color: rgba(143, 224, 186, 0.35);
+  background: linear-gradient(180deg, rgba(143, 224, 186, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.flow-stage-index {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.flow-stage-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.flow-stage-copy strong {
+  font-size: 1rem;
+}
+
+.flow-stage-copy span {
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .builder-status-grid {
@@ -493,6 +560,57 @@ select {
     var(--panel-strong);
 }
 
+.details-header-layout,
+.details-header-main,
+.details-header-side,
+.builder-project-toolbar,
+.builder-project-toolbar-copy,
+.builder-project-toolbar-side {
+  display: grid;
+}
+
+.details-header-layout {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.details-header-main,
+.builder-project-toolbar-copy {
+  gap: 12px;
+}
+
+.details-header-main p,
+.builder-project-toolbar-copy p {
+  margin: 0;
+}
+
+.details-header-side,
+.builder-project-toolbar-side {
+  gap: 14px;
+  justify-items: end;
+}
+
+.detail-header-badges,
+.builder-project-badges {
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+.project-meta-badges {
+  margin-bottom: 0;
+}
+
+.detail-actions-wide {
+  justify-content: flex-end;
+}
+
+.project-share-actions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .builder-hero-compact,
 .composer-card {
   width: min(920px, 100%);
@@ -520,6 +638,28 @@ select {
     var(--panel-strong);
 }
 
+.composer-card-elevated {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 188, 103, 0.24);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+}
+
+.composer-card-elevated::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(255, 188, 103, 0.14), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%);
+  content: "";
+  pointer-events: none;
+}
+
+.composer-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .composer-card textarea {
   width: 100%;
   min-height: 176px;
@@ -531,6 +671,10 @@ select {
   color: var(--text);
   outline: none;
   background: rgba(12, 9, 6, 0.3);
+}
+
+.composer-card textarea:hover {
+  border-color: rgba(255, 188, 103, 0.34);
 }
 
 .composer-card textarea:focus,
@@ -552,6 +696,316 @@ select {
 
 .composer-footer {
   margin-top: 16px;
+}
+
+.composer-submit {
+  min-width: 148px;
+}
+
+.template-library,
+.template-library-header {
+  display: grid;
+}
+
+.template-library {
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.template-library-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.template-library-header strong {
+  font-size: 1rem;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.template-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 188, 103, 0.3);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.16);
+}
+
+.template-card.active {
+  border-color: rgba(255, 188, 103, 0.48);
+  background: linear-gradient(180deg, rgba(255, 188, 103, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.template-card strong {
+  font-size: 0.95rem;
+}
+
+.template-card span:last-child {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.upload-zone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px dashed rgba(255, 188, 103, 0.28);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 188, 103, 0.06), rgba(255, 255, 255, 0.02));
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.upload-zone:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 188, 103, 0.45);
+}
+
+.upload-zone-copy,
+.upload-zone-actions {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.upload-zone-copy strong {
+  font-size: 1rem;
+}
+
+.upload-zone-copy span,
+.upload-zone-limit {
+  color: var(--muted);
+}
+
+.composer-file-input {
+  display: none;
+}
+
+.composer-attachment-grid,
+.attachment-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.composer-attachment-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.composer-attachment-card,
+.attachment-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.composer-attachment-card:hover,
+.attachment-card:hover,
+.screen-card:hover,
+.project-card:hover,
+.share-panel:hover,
+.preview-panel:hover,
+.timeline-step:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 188, 103, 0.28);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.16);
+}
+
+.composer-attachment-card {
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.composer-attachment-media {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(255, 188, 103, 0.12);
+}
+
+.composer-attachment-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.composer-attachment-icon {
+  color: var(--ink);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+}
+
+.composer-attachment-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.composer-attachment-copy strong,
+.attachment-card-copy strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.composer-attachment-copy span,
+.attachment-card-copy span,
+.attachment-size {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.composer-attachment-remove {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.attachments-panel {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.artifacts-panel {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.attachment-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.artifact-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.artifact-summary-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.artifact-summary-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.artifact-kind {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.artifact-kind.preview {
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.artifact-kind.blueprint,
+.artifact-kind.note,
+.artifact-kind.component,
+.artifact-kind.page,
+.artifact-kind.style,
+.artifact-kind.test {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.artifact-summary-card strong {
+  font-size: 0.96rem;
+  overflow-wrap: anywhere;
+}
+
+.artifact-summary-card span:last-child {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.artifact-download {
+  width: fit-content;
+}
+
+.attachment-card-top,
+.attachment-card-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.attachment-card-top {
+  grid-template-columns: auto auto;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.attachment-kind {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.attachment-kind.image {
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.attachment-kind.document {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.attachment-excerpt {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .mode-picker {
@@ -584,6 +1038,20 @@ select {
 .share-panel {
   width: min(920px, 100%);
   margin: 0 auto;
+}
+
+.builder-project-toolbar {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.builder-project-toolbar-copy h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+  line-height: 1.1;
 }
 
 .share-layout,
@@ -681,6 +1149,45 @@ select {
   background:
     linear-gradient(180deg, rgba(255, 188, 103, 0.06), transparent 18rem),
     var(--panel);
+}
+
+.runtime-preview-card,
+.runtime-preview-header {
+  display: grid;
+}
+
+.runtime-preview-card {
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.runtime-preview-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.runtime-preview-header strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.runtime-preview-frame {
+  overflow: hidden;
+  border: 1px solid rgba(255, 225, 180, 0.2);
+  border-radius: 22px;
+  background: rgba(14, 11, 8, 0.36);
+}
+
+.runtime-preview-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .empty-preview {
@@ -1036,6 +1543,65 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.projects-toolbar,
+.projects-toolbar-main,
+.projects-toolbar-filters,
+.projects-toolbar-meta,
+.projects-search,
+.projects-filter,
+.project-manage-actions {
+  display: grid;
+}
+
+.projects-toolbar {
+  gap: 16px;
+}
+
+.projects-toolbar-main {
+  gap: 10px;
+}
+
+.projects-search,
+.projects-filter {
+  gap: 8px;
+}
+
+.projects-search span,
+.projects-filter span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.projects-search-input,
+.projects-filter select {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  outline: none;
+  background: rgba(12, 9, 6, 0.3);
+}
+
+.projects-search-input:focus,
+.projects-filter select:focus {
+  border-color: rgba(255, 188, 103, 0.5);
+}
+
+.projects-toolbar-filters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.projects-toolbar-meta {
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 10px;
+}
+
 .project-meta {
   color: var(--muted);
   font-size: 0.88rem;
@@ -1046,10 +1612,19 @@ select {
   gap: 10px;
 }
 
+.project-manage-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .project-badges {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 12px;
+}
+
+.sidebar-action {
+  width: 100%;
 }
 
 .detail-chip-row {
@@ -1081,7 +1656,12 @@ select {
 
 @media (max-width: 1240px) {
   .builder-status-grid,
-  .screen-grid {
+  .screen-grid,
+  .builder-flow,
+  .composer-attachment-grid,
+  .attachment-grid,
+  .template-grid,
+  .artifact-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1101,7 +1681,16 @@ select {
   .project-grid,
   .pipeline,
   .builder-status-grid,
-  .code-workbench {
+  .code-workbench,
+  .builder-flow,
+  .composer-attachment-grid,
+  .attachment-grid,
+  .template-grid,
+  .artifact-summary-grid,
+  .projects-toolbar-filters,
+  .project-manage-actions,
+  .details-header-layout,
+  .builder-project-toolbar {
     grid-template-columns: 1fr;
   }
 
@@ -1119,6 +1708,32 @@ select {
   .code-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .upload-zone {
+    grid-template-columns: 1fr;
+  }
+
+  .template-library-header,
+  .runtime-preview-header {
+    grid-template-columns: 1fr;
+  }
+
+  .projects-toolbar-meta {
+    grid-auto-flow: row;
+  }
+
+  .details-header-side,
+  .builder-project-toolbar-side,
+  .detail-actions-wide,
+  .detail-header-badges,
+  .builder-project-badges {
+    justify-items: start;
+    justify-content: flex-start;
+  }
+
+  .project-share-actions-inline {
+    width: 100%;
   }
 
   .code-explorer {
@@ -1161,9 +1776,14 @@ select {
   .composer-controls,
   .topbar-actions,
   .detail-actions,
-  .auth-switch {
+  .auth-switch,
+  .upload-zone-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .composer-attachment-card {
+    grid-template-columns: 1fr;
   }
 
   .share-actions {

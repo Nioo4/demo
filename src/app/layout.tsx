@@ -26,10 +26,10 @@ export default function RootLayout({
                 <div className="topbar-copy">
                   <p className="eyebrow">AI Workspace</p>
                   <h1 className="topbar-title">Atoms Lite 中文工作台</h1>
-                  <p className="topbar-text">输入需求，查看过程，保存结果。</p>
+                  <p className="topbar-text">输入需求、上传素材、查看生成过程并管理项目结果。</p>
                 </div>
                 <div className="topbar-actions">
-                  <span className="topbar-chip">生成台 / 项目库</span>
+                  <span className="topbar-chip">生成台 / 项目库 / 分享页</span>
                 </div>
               </header>
               <div className="page-slot">{children}</div>

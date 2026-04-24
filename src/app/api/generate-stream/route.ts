@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { normalizeProjectAttachments } from "@/lib/attachments";
 import { buildPendingSkeleton, generateProjectFromPrompt, normalizeMode } from "@/lib/generation-service";
 import { saveProject } from "@/lib/server-store";
 import { getRequestUser } from "@/lib/supabase-server";
@@ -15,7 +16,7 @@ const pendingSummary: Record<AgentStep["key"], string> = {
 };
 
 const runningSummary: Record<AgentStep["key"], string> = {
-  planner: "正在分析需求并定义本次项目范围。",
+  planner: "正在分析需求并整理产品方向。",
   ux: "正在设计页面结构、流程与交互细节。",
   coder: "正在生成数据模型与组件骨架。",
   qa: "正在检查完成度、风险点与扩展方向。"
@@ -40,8 +41,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "需求描述不能为空。" }, { status: 400 });
   }
 
+  const attachments = normalizeProjectAttachments(body.attachments);
   const mode = normalizeMode(body.mode);
-  const pendingSkeleton = buildPendingSkeleton(prompt);
+  const pendingSkeleton = buildPendingSkeleton(prompt, attachments);
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
           project: toProgressProject(pendingSkeleton, 0, "running")
         });
 
-        const llmProject = await generateProjectFromPrompt(prompt, mode);
+        const llmProject = await generateProjectFromPrompt(prompt, mode, attachments);
         const finalProject: GenerationProject = {
           ...llmProject,
           id: pendingSkeleton.id,
@@ -68,12 +70,12 @@ export async function POST(request: Request) {
         });
 
         for (let index = 1; index < finalProject.agentSteps.length; index += 1) {
-          await sleep(380);
+          await sleep(320);
           sendEvent(controller, "step_update", {
             project: toProgressProject(finalProject, index, "running")
           });
 
-          await sleep(460);
+          await sleep(420);
           sendEvent(controller, "step_update", {
             project: toProgressProject(finalProject, index, "complete")
           });

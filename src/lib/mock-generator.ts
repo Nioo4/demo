@@ -1,4 +1,4 @@
-import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject } from "./types";
+import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject, ProjectAttachment } from "./types";
 
 const SAMPLE_PROMPT =
   "做一个面向独立开发者的发布计划助手，能把产品想法整理成页面结构、任务清单和发布说明。";
@@ -7,13 +7,13 @@ export function getSamplePrompt() {
   return SAMPLE_PROMPT;
 }
 
-export function generateMockProject(prompt: string): GenerationProject {
+export function generateMockProject(prompt: string, attachments: ProjectAttachment[] = []): GenerationProject {
   const normalizedPrompt = normalizePrompt(prompt);
   const now = new Date().toISOString();
   const title = buildTitle(normalizedPrompt);
-  const blueprint = buildBlueprint(normalizedPrompt, title);
+  const blueprint = buildBlueprint(normalizedPrompt, title, attachments);
   const generatedCode = buildGeneratedCode(title, blueprint);
-  const agentSteps = buildAgentSteps(blueprint);
+  const agentSteps = buildAgentSteps(blueprint, attachments);
 
   return {
     id: crypto.randomUUID(),
@@ -21,8 +21,11 @@ export function generateMockProject(prompt: string): GenerationProject {
     prompt: normalizedPrompt,
     status: "ready",
     isPublic: false,
+    isFavorite: false,
     shareToken: null,
     theme: "command-center",
+    attachments,
+    artifacts: [],
     agentSteps,
     blueprint,
     generatedCode,
@@ -59,8 +62,9 @@ function buildTitle(prompt: string) {
     .join(" ");
 }
 
-function buildBlueprint(prompt: string, title: string): AppBlueprint {
+function buildBlueprint(prompt: string, title: string, attachments: ProjectAttachment[]): AppBlueprint {
   const lower = prompt.toLowerCase();
+  const hasAttachments = attachments.length > 0;
   const isTeamTool =
     lower.includes("team") || lower.includes("collaborat") || prompt.includes("团队") || prompt.includes("协作");
   const isCommerce =
@@ -87,43 +91,48 @@ function buildBlueprint(prompt: string, title: string): AppBlueprint {
         : "想快速验证产品方向的独立开发者";
 
   const primaryEntity = isCommerce ? "商品" : isLearning ? "课程" : isTeamTool ? "工作区" : "想法";
+  const screens = [
+    {
+      name: "需求控制台",
+      purpose: "接收用户目标与约束，并展示当前生成状态。",
+      interactions: ["提交需求", "查看 Agent 进度", "重新生成"]
+    },
+    {
+      name: "生成工作区",
+      purpose: "展示应用结构、主要流程和建议下一步。",
+      interactions: ["查看页面结构", "打开代码片段", "保存项目"]
+    },
+    {
+      name: hasAttachments ? "参考素材面板" : "项目记录",
+      purpose: hasAttachments ? "集中查看上传的文档和图片，并将它们作为方案参考。" : "保存每次生成结果，方便横向对比与继续迭代。",
+      interactions: hasAttachments ? ["浏览文档摘要", "查看图片参考", "回到需求编辑"] : ["浏览历史结果", "重新打开项目", "清理旧草稿"]
+    }
+  ];
+
+  const dataModel = [
+    {
+      entity: primaryEntity,
+      fields: ["id", "title", "status", "summary", "createdAt", "updatedAt"]
+    },
+    {
+      entity: "Agent执行记录",
+      fields: ["id", "projectId", "agentKey", "status", "summary", "output"]
+    },
+    {
+      entity: hasAttachments ? "参考素材" : "产物",
+      fields: hasAttachments ? ["id", "projectId", "kind", "name", "mimeType", "snippet"] : ["id", "projectId", "kind", "name", "content"]
+    }
+  ];
 
   return {
     audience,
-    valueProposition: `${title} 会把模糊的需求整理成明确流程，给出页面结构、下一步动作、可保存状态和可复看的结果。`,
-    screens: [
-      {
-        name: "需求控制台",
-        purpose: "接收用户的目标与约束，并展示当前的生成状态。",
-        interactions: ["提交需求", "查看 Agent 进度", "重新生成"]
-      },
-      {
-        name: "生成工作区",
-        purpose: "展示应用结构、主要流程和建议下一步。",
-        interactions: ["查看页面结构", "打开代码片段", "保存项目"]
-      },
-      {
-        name: "项目记录",
-        purpose: "保存每次生成结果，方便横向对比与继续迭代。",
-        interactions: ["浏览历史结果", "重新打开项目", "清理旧草稿"]
-      }
-    ],
-    dataModel: [
-      {
-        entity: primaryEntity,
-        fields: ["id", "title", "status", "summary", "createdAt", "updatedAt"]
-      },
-      {
-        entity: "Agent执行记录",
-        fields: ["id", "projectId", "agentKey", "status", "summary", "output"]
-      },
-      {
-        entity: "产物",
-        fields: ["id", "projectId", "kind", "name", "content"]
-      }
-    ],
+    valueProposition: hasAttachments
+      ? `${title} 会结合这次上传的 ${attachments.length} 个参考素材，把模糊需求整理成页面结构、交互重点和可复看的结果。`
+      : `${title} 会把模糊的需求整理成清晰流程，给出页面结构、下一步动作、可保存状态和可复看的结果。`,
+    screens,
+    dataModel,
     extensionIdeas: [
-      "把生成结果进一步拆成可编辑的页面与组件级产物。",
+      hasAttachments ? "给图片和文档补充自动摘要、OCR 与标签能力。" : "把生成结果进一步拆成可编辑的页面与组件级产物。",
       "补上用户登录与权限控制，支持多人查看同一个项目。",
       "增加一键导出仓库或部署预览的能力。"
     ]
@@ -165,7 +174,12 @@ function buildGeneratedCode(title: string, blueprint: AppBlueprint): GeneratedCo
   };
 }
 
-function buildAgentSteps(blueprint: AppBlueprint): AgentStep[] {
+function buildAgentSteps(blueprint: AppBlueprint, attachments: ProjectAttachment[]): AgentStep[] {
+  const attachmentOutput =
+    attachments.length > 0
+      ? [`识别到 ${attachments.length} 个参考素材`, ...attachments.slice(0, 2).map((attachment) => attachment.name)]
+      : [];
+
   return [
     {
       id: crypto.randomUUID(),
@@ -180,8 +194,8 @@ function buildAgentSteps(blueprint: AppBlueprint): AgentStep[] {
       key: "ux",
       label: "交互 Agent",
       status: "complete",
-      summary: "已规划主要页面与核心交互路径。",
-      output: blueprint.screens.map((screen) => `${screen.name}: ${screen.purpose}`)
+      summary: attachments.length > 0 ? "已结合上传素材规划主要页面与交互路径。" : "已规划主要页面与核心交互路径。",
+      output: [...attachmentOutput, ...blueprint.screens.map((screen) => `${screen.name}: ${screen.purpose}`)].slice(0, 5)
     },
     {
       id: crypto.randomUUID(),
@@ -198,7 +212,7 @@ function buildAgentSteps(blueprint: AppBlueprint): AgentStep[] {
       status: "complete",
       summary: "已检查结果是否具备演示与继续迭代的可行性。",
       output: [
-        "当前原型已经具备从需求输入到结果预览的完整闭环。",
+        attachments.length > 0 ? "上传素材已进入当前项目上下文。" : "当前原型已具备从需求输入到结果预览的完整闭环。",
         "项目结果会落到 Supabase 的 projects 与 agent_runs 表。",
         "真实 AI 与稳定 Mock 共用同一套前端与接口契约。"
       ]
