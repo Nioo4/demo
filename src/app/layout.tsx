@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+
+import { AppSidebar } from "@/components/AppSidebar";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atoms Lite Demo",
-  description: "A focused AI agent app builder prototype."
+  title: "Atoms Lite 中文工作台",
+  description: "一个用于生成应用方案、查看过程与保存项目记录的中文 AI 工作台。"
 };
 
 export default function RootLayout({
@@ -14,23 +15,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body>
-        <div className="site-shell">
-          <header className="topbar">
-            <Link className="brand" href="/">
-              <span className="brand-mark">A</span>
-              <span>Atoms Lite</span>
-            </Link>
-            <nav className="nav-links" aria-label="Primary navigation">
-              <Link href="/builder">Builder</Link>
-              <Link href="/projects">Projects</Link>
-              <a href="https://atoms.dev/" target="_blank" rel="noreferrer">
-                Atoms
-              </a>
-            </nav>
-          </header>
-          {children}
+        <div className="app-shell">
+          <AppSidebar />
+          <div className="app-main">
+            <header className="topbar">
+              <div className="topbar-copy">
+                <p className="eyebrow">AI Workspace</p>
+                <h1 className="topbar-title">Atoms Lite 中文工作台</h1>
+                <p className="topbar-text">输入需求，查看过程，保存结果。</p>
+              </div>
+              <div className="topbar-actions">
+                <span className="topbar-chip">生成台 / 项目库</span>
+              </div>
+            </header>
+            <div className="page-slot">{children}</div>
+          </div>
         </div>
       </body>
     </html>

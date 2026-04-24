@@ -1,54 +1,61 @@
 import Link from "next/link";
 
-const evaluationItems = [
-  "Real interaction through a prompt-to-preview workflow",
-  "Persistence contract mapped directly to Supabase tables",
-  "Agent-driven product, UX, code, and QA steps",
-  "Dual generation modes: deterministic mock and real LLM"
+const featureItems = [
+  "输入一句产品需求，生成应用方案与页面结构",
+  "查看 Agent 时间线、页面预览和代码片段",
+  "将结果保存到项目库，方便回看与继续迭代"
+];
+
+const guideItems = [
+  "先进入生成台，描述目标用户、核心流程和想要的页面。",
+  "生成完成后，重点查看时间线、预览区和代码区是否一致。",
+  "满意的话进入项目库，打开详情页继续复看或分享链接。"
 ];
 
 export default function HomePage() {
   return (
-    <main className="home-grid">
-      <section className="hero-card">
-        <p className="eyebrow">ROOT full-stack challenge prototype</p>
-        <h1>Turn an app idea into a reviewable product blueprint.</h1>
+    <main className="page-stack">
+      <section className="hero-card hero-card-compact">
+        <p className="eyebrow">应用介绍</p>
+        <h1>一个用于生成应用方案的中文 AI 工作台。</h1>
         <p className="hero-copy">
-          Atoms Lite is a compact AI-native builder demo. It simulates a team of agents that
-          plan, design, code, and validate a small web application from a single prompt.
+          你可以像和 ChatGPT 对话一样输入需求，然后在同一个工作区里查看生成过程、
+          页面草图、代码片段和保存后的项目记录。
         </p>
         <div className="hero-actions">
           <Link className="button primary" href="/builder">
-            Open Builder
+            打开生成台
           </Link>
           <Link className="button secondary" href="/projects">
-            View Projects
+            打开项目库
           </Link>
         </div>
       </section>
 
-      <section className="mission-panel" aria-label="Demo fit">
-        <div>
-          <p className="eyebrow">Why this fits</p>
-          <h2>Built for a 6-8 hour delivery window.</h2>
-        </div>
-        <ul className="check-list">
-          {evaluationItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </section>
+      <section className="home-grid">
+        <section className="mission-panel" aria-label="Feature summary">
+          <div>
+            <p className="eyebrow">能做什么</p>
+            <h2>核心功能</h2>
+          </div>
+          <ul className="check-list">
+            {featureItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
 
-      <section className="pipeline-card">
-        <p className="eyebrow">Agent pipeline</p>
-        <div className="pipeline">
-          {["Prompt", "Planner", "UX", "Code", "QA", "Preview"].map((step, index) => (
-            <div className="pipeline-node" key={step}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{step}</strong>
-            </div>
-          ))}
-        </div>
+        <section className="mission-panel" aria-label="Usage guide">
+          <div>
+            <p className="eyebrow">怎么使用</p>
+            <h2>三步上手</h2>
+          </div>
+          <ul className="check-list">
+            {guideItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
       </section>
     </main>
   );

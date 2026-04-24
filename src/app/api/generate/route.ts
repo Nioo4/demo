@@ -10,11 +10,11 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as GenerateRequest;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ error: "请求体不是合法的 JSON。" }, { status: 400 });
   }
 
   if (!body.prompt || body.prompt.trim().length < 8) {
-    return NextResponse.json({ error: "Prompt must be at least 8 characters." }, { status: 400 });
+    return NextResponse.json({ error: "需求描述至少需要 8 个字符。" }, { status: 400 });
   }
 
   const mode = normalizeMode(body.mode);
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     project = await saveProject(generatedProject);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to persist generated project." },
+      { error: error instanceof Error ? error.message : "保存生成项目时失败。" },
       { status: 500 }
     );
   }

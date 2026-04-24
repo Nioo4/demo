@@ -3,23 +3,24 @@ import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject } from "
 
 type AiProvider = "openai" | "deepseek";
 
-const DEFAULT_OPENAI_MODEL = "gpt-5.4";
+const DEFAULT_OPENAI_MODEL = "gpt-4o";
 const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
 const MAX_TITLE_LENGTH = 84;
 
 const AGENT_ORDER: AgentStep["key"][] = ["planner", "ux", "coder", "qa"];
 
 const AGENT_LABELS: Record<AgentStep["key"], string> = {
-  planner: "Planner Agent",
-  ux: "UX Agent",
-  coder: "Code Agent",
-  qa: "QA Agent"
+  planner: "规划 Agent",
+  ux: "交互 Agent",
+  coder: "代码 Agent",
+  qa: "校验 Agent"
 };
 
 const SYSTEM_PROMPT = `You are generating output for an AI-native app builder demo.
 Return only JSON that matches the provided schema.
 Use clear, practical product language.
-Keep code files concise but realistic.`;
+Keep code files concise but realistic.
+Match the language of the user's prompt for user-facing text fields.`;
 
 const DEEPSEEK_JSON_EXAMPLE = `{
   "title": "Launch Planner",
@@ -268,8 +269,11 @@ async function generateDeepSeekProject(prompt: string): Promise<GenerationProjec
 
   const baseUrl = (process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com").replace(/\/$/, "");
   const model = process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_DEEPSEEK_MODEL;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
+    signal: controller.signal,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json"
@@ -296,6 +300,7 @@ ${DEEPSEEK_JSON_EXAMPLE}`
       ]
     })
   });
+  clearTimeout(timeoutId);
 
   const payload = await safeParseJson(response);
   if (!response.ok) {
@@ -648,7 +653,7 @@ function asNonEmptyString(value: unknown) {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function readFirstFinishReason(payload: unknown) {

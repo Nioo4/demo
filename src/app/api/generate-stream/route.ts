@@ -7,17 +7,17 @@ import type { AgentStep, GenerateRequest, GenerationProject } from "@/lib/types"
 const encoder = new TextEncoder();
 
 const pendingSummary: Record<AgentStep["key"], string> = {
-  planner: "Waiting to scope the app idea.",
-  ux: "Waiting for product direction from Planner Agent.",
-  coder: "Waiting for UX structure to generate code.",
-  qa: "Waiting for generated artifacts to validate quality."
+  planner: "等待梳理这次需求的范围与目标。",
+  ux: "等待规划结果后输出页面与交互结构。",
+  coder: "等待交互方案确定后生成代码骨架。",
+  qa: "等待代码与预览产物生成后进行校验。"
 };
 
 const runningSummary: Record<AgentStep["key"], string> = {
-  planner: "Analyzing the prompt and defining project scope.",
-  ux: "Designing screens, flow, and interaction details.",
-  coder: "Generating data model and component blueprint.",
-  qa: "Reviewing readiness, risks, and extension path."
+  planner: "正在分析需求并定义本次项目范围。",
+  ux: "正在设计页面结构、流程与交互细节。",
+  coder: "正在生成数据模型与组件骨架。",
+  qa: "正在检查完成度、风险点与扩展方向。"
 };
 
 export async function POST(request: Request) {
@@ -26,11 +26,11 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as GenerateRequest;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ error: "请求体不是合法的 JSON。" }, { status: 400 });
   }
 
   if (!body.prompt || body.prompt.trim().length < 8) {
-    return NextResponse.json({ error: "Prompt must be at least 8 characters." }, { status: 400 });
+    return NextResponse.json({ error: "需求描述至少需要 8 个字符。" }, { status: 400 });
   }
 
   const mode = normalizeMode(body.mode);
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         controller.close();
       } catch (error) {
         sendEvent(controller, "error", {
-          error: error instanceof Error ? error.message : "Generation stream failed."
+          error: error instanceof Error ? error.message : "流式生成失败。"
         });
         controller.close();
       }

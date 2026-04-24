@@ -1,7 +1,7 @@
 import type { AgentStep, AppBlueprint, GeneratedCode, GenerationProject } from "./types";
 
 const SAMPLE_PROMPT =
-  "Build a lightweight launch planner for indie makers to turn product ideas into landing pages, task lists, and release notes.";
+  "做一个面向独立开发者的发布计划助手，能把产品想法整理成页面结构、任务清单和发布说明。";
 
 export function getSamplePrompt() {
   return SAMPLE_PROMPT;
@@ -35,14 +35,21 @@ function normalizePrompt(prompt: string) {
 }
 
 function buildTitle(prompt: string) {
-  const words = prompt
+  const compact = prompt.trim().replace(/\s+/g, " ");
+  const chineseOnly = compact.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, "");
+
+  if (/[\u4e00-\u9fa5]/.test(chineseOnly)) {
+    return `${chineseOnly.slice(0, 10) || "AI应用"}工作台`;
+  }
+
+  const words = compact
     .replace(/[^\w\s-]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 5);
 
   if (words.length === 0) {
-    return "Agent Built App";
+    return "AI 应用工作台";
   }
 
   return words
@@ -52,38 +59,51 @@ function buildTitle(prompt: string) {
 
 function buildBlueprint(prompt: string, title: string): AppBlueprint {
   const lower = prompt.toLowerCase();
-  const isTeamTool = lower.includes("team") || lower.includes("collaborat");
-  const isCommerce = lower.includes("shop") || lower.includes("store") || lower.includes("commerce");
-  const isLearning = lower.includes("learn") || lower.includes("course") || lower.includes("study");
+  const isTeamTool =
+    lower.includes("team") || lower.includes("collaborat") || prompt.includes("团队") || prompt.includes("协作");
+  const isCommerce =
+    lower.includes("shop") ||
+    lower.includes("store") ||
+    lower.includes("commerce") ||
+    prompt.includes("商城") ||
+    prompt.includes("电商") ||
+    prompt.includes("店铺");
+  const isLearning =
+    lower.includes("learn") ||
+    lower.includes("course") ||
+    lower.includes("study") ||
+    prompt.includes("学习") ||
+    prompt.includes("课程") ||
+    prompt.includes("教育");
 
   const audience = isTeamTool
-    ? "Small teams that need fast alignment"
+    ? "需要快速协同与对齐的小团队"
     : isCommerce
-      ? "Operators who need a focused selling workflow"
+      ? "需要聚焦售卖流程的运营与商家"
       : isLearning
-        ? "Learners who want guided progress"
-        : "Builders validating a focused product idea";
+        ? "需要循序渐进学习路径的用户"
+        : "想快速验证产品方向的独立开发者";
 
-  const primaryEntity = isCommerce ? "Product" : isLearning ? "Lesson" : isTeamTool ? "Workspace" : "Idea";
+  const primaryEntity = isCommerce ? "商品" : isLearning ? "课程" : isTeamTool ? "工作区" : "想法";
 
   return {
     audience,
-    valueProposition: `${title} turns a rough idea into a guided workflow with clear next actions, saved state, and a shareable result.`,
+    valueProposition: `${title} 会把模糊的需求整理成明确流程，给出页面结构、下一步动作、可保存状态和可复看的结果。`,
     screens: [
       {
-        name: "Launch Console",
-        purpose: "Collect the user's goal and show the current generation status.",
-        interactions: ["Submit a prompt", "Review agent progress", "Restart generation"]
+        name: "需求控制台",
+        purpose: "接收用户的目标与约束，并展示当前的生成状态。",
+        interactions: ["提交需求", "查看 Agent 进度", "重新生成"]
       },
       {
-        name: "Generated Workspace",
-        purpose: "Show the app structure, primary workflow, and suggested next steps.",
-        interactions: ["Inspect screens", "Open generated code", "Save the project"]
+        name: "生成工作区",
+        purpose: "展示应用结构、主要流程和建议下一步。",
+        interactions: ["查看页面结构", "打开代码片段", "保存项目"]
       },
       {
-        name: "Project History",
-        purpose: "Persist generated apps so the user can compare and iterate.",
-        interactions: ["Browse saved ideas", "Re-open a project", "Delete stale drafts"]
+        name: "项目记录",
+        purpose: "保存每次生成结果，方便横向对比与继续迭代。",
+        interactions: ["浏览历史结果", "重新打开项目", "清理旧草稿"]
       }
     ],
     dataModel: [
@@ -92,18 +112,18 @@ function buildBlueprint(prompt: string, title: string): AppBlueprint {
         fields: ["id", "title", "status", "summary", "createdAt", "updatedAt"]
       },
       {
-        entity: "AgentRun",
+        entity: "Agent执行记录",
         fields: ["id", "projectId", "agentKey", "status", "summary", "output"]
       },
       {
-        entity: "Artifact",
+        entity: "产物",
         fields: ["id", "projectId", "kind", "name", "content"]
       }
     ],
     extensionIdeas: [
-      "Connect a real LLM provider for dynamic app plans and code.",
-      "Add Supabase persistence with auth and row-level security.",
-      "Add a deploy preview step that exports the generated app as a repository."
+      "把生成结果进一步拆成可编辑的页面与组件级产物。",
+      "补上用户登录与权限控制，支持多人查看同一个项目。",
+      "增加一键导出仓库或部署预览的能力。"
     ]
   };
 }
@@ -148,37 +168,37 @@ function buildAgentSteps(blueprint: AppBlueprint): AgentStep[] {
     {
       id: crypto.randomUUID(),
       key: "planner",
-      label: "Planner Agent",
+      label: "规划 Agent",
       status: "complete",
-      summary: "Converted the raw idea into a scoped product direction.",
+      summary: "已把原始需求整理成更明确的产品方向。",
       output: [blueprint.audience, blueprint.valueProposition]
     },
     {
       id: crypto.randomUUID(),
       key: "ux",
-      label: "UX Agent",
+      label: "交互 Agent",
       status: "complete",
-      summary: "Designed the main screens and interaction path.",
+      summary: "已规划主要页面与核心交互路径。",
       output: blueprint.screens.map((screen) => `${screen.name}: ${screen.purpose}`)
     },
     {
       id: crypto.randomUUID(),
       key: "coder",
-      label: "Code Agent",
+      label: "代码 Agent",
       status: "complete",
-      summary: "Generated a component skeleton and typed data model.",
-      output: blueprint.dataModel.map((model) => `${model.entity}: ${model.fields.join(", ")}`)
+      summary: "已生成组件骨架与数据模型草稿。",
+      output: blueprint.dataModel.map((model) => `${model.entity}: ${model.fields.join("、")}`)
     },
     {
       id: crypto.randomUUID(),
       key: "qa",
-      label: "QA Agent",
+      label: "校验 Agent",
       status: "complete",
-      summary: "Checked the result for review-ready viability.",
+      summary: "已检查结果是否具备演示与继续迭代的可行性。",
       output: [
-        "The prototype has a complete prompt-to-preview loop.",
-        "Persistence is mapped to Supabase projects and agent_runs tables.",
-        "Real LLM generation is available through the same API contract."
+        "当前原型已经具备从需求输入到结果预览的完整闭环。",
+        "项目结果会落到 Supabase 的 projects 与 agent_runs 表。",
+        "真实 AI 与稳定 Mock 共用同一套前端与接口契约。"
       ]
     }
   ];

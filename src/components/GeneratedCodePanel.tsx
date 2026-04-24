@@ -8,8 +8,8 @@ export function GeneratedCodePanel({ code }: GeneratedCodePanelProps) {
   return (
     <section className="panel code-panel">
       <div className="panel-heading">
-        <p className="eyebrow">Artifact</p>
-        <h2>Generated code</h2>
+        <p className="eyebrow">代码产物</p>
+        <h2>生成代码片段</h2>
       </div>
       {code ? (
         <div className="code-stack">
@@ -26,7 +26,7 @@ export function GeneratedCodePanel({ code }: GeneratedCodePanelProps) {
           ))}
         </div>
       ) : (
-        <p className="muted">Generated component snippets will appear after the agents finish.</p>
+        <p className="muted">Agent 完成后，这里会显示生成得到的组件片段与数据模型文件。</p>
       )}
     </section>
   );

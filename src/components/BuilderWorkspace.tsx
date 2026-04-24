@@ -7,6 +7,7 @@ import { AppPreview } from "@/components/AppPreview";
 import { GeneratedCodePanel } from "@/components/GeneratedCodePanel";
 import { PromptComposer } from "@/components/PromptComposer";
 import type { GenerationMode, GenerationProject } from "@/lib/types";
+import { formatAiProvider, formatGenerationMode } from "@/lib/ui";
 
 type BuilderWorkspaceProps = {
   samplePrompt: string;
@@ -27,6 +28,7 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
   const [mode, setMode] = useState<GenerationMode>("mock");
   const [llmConfigured, setLlmConfigured] = useState(false);
   const [aiProvider, setAiProvider] = useState("openai");
+  const [llmModel, setLlmModel] = useState("");
   const [project, setProject] = useState<GenerationProject | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,7 +44,7 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
       }
 
       if (isMounted) {
-        setError("Project not found in database.");
+        setError("数据库里没有找到这个项目。");
       }
     }
 
@@ -70,6 +72,7 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
           generationMode?: GenerationMode;
           llmConfigured?: boolean;
           aiProvider?: string;
+          llmModel?: string;
         };
 
         if (!isMounted) {
@@ -83,10 +86,12 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
 
         setLlmConfigured(health.llmConfigured === true);
         setAiProvider(health.aiProvider ?? "openai");
+        setLlmModel(health.llmModel ?? "");
       } catch {
         if (isMounted) {
           setLlmConfigured(false);
           setAiProvider("openai");
+          setLlmModel("");
         }
       }
     }
@@ -117,7 +122,7 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
         }
       });
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Unknown generation error.");
+      setError(caughtError instanceof Error ? caughtError.message : "生成过程中出现了未知错误。");
     } finally {
       setIsGenerating(false);
     }
@@ -125,31 +130,56 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
 
   return (
     <main className="builder-layout">
-      <section className="builder-intro">
-        <p className="eyebrow">Agent builder</p>
-        <h1>Describe an app. Watch agents shape it into a product.</h1>
-        <p>
-          Generation streams in stages. Each agent moves from pending to running to complete before
-          the final project is saved.
-        </p>
+      <section className="builder-focus">
+        <section className="builder-hero builder-hero-compact">
+          <div>
+            <p className="eyebrow">生成台</p>
+            <h1>把一句需求，变成一套可查看的应用方案。</h1>
+            <p>描述你的产品想法，然后在下方查看时间线、预览和代码结果。</p>
+          </div>
+
+          <div className="hero-actions">
+            <span className="topbar-chip">模式：{formatGenerationMode(mode)}</span>
+            <span className="topbar-chip">
+              模型：{formatAiProvider(aiProvider)} {llmConfigured ? llmModel || "已连接" : "未连接"}
+            </span>
+          </div>
+        </section>
+
+        <PromptComposer
+          prompt={prompt}
+          mode={mode}
+          llmConfigured={llmConfigured}
+          aiProvider={aiProvider}
+          isGenerating={isGenerating}
+          error={error}
+          onPromptChange={setPrompt}
+          onModeChange={setMode}
+          onGenerate={handleGenerate}
+        />
       </section>
 
-      <PromptComposer
-        prompt={prompt}
-        mode={mode}
-        llmConfigured={llmConfigured}
-        aiProvider={aiProvider}
-        isGenerating={isGenerating}
-        error={error}
-        onPromptChange={setPrompt}
-        onModeChange={setMode}
-        onGenerate={handleGenerate}
-      />
-
       <section className="workspace-grid">
-        <AgentTimeline steps={project?.agentSteps ?? []} isGenerating={isGenerating} />
-        <AppPreview project={project} />
-        <GeneratedCodePanel code={project?.generatedCode ?? null} />
+        <div className="main-column">
+          <AppPreview project={project} />
+          <GeneratedCodePanel code={project?.generatedCode ?? null} />
+        </div>
+
+        <div className="side-column">
+          <AgentTimeline steps={project?.agentSteps ?? []} isGenerating={isGenerating} />
+
+          <section className="panel tips-panel">
+            <div className="panel-heading">
+              <p className="eyebrow">使用指南</p>
+              <h2>建议你这样看结果</h2>
+            </div>
+            <ul className="check-list">
+              <li>先看右侧时间线，确认四个阶段都正常完成。</li>
+              <li>再看中间预览区，检查页面结构和用户流程是否合理。</li>
+              <li>最后对照代码区，确认代码产物和预览结果基本一致。</li>
+            </ul>
+          </section>
+        </div>
       </section>
     </main>
   );
@@ -166,7 +196,7 @@ async function streamGenerate(prompt: string, mode: GenerationMode, onEvent: Str
 
   if (!response.ok) {
     const failure = (await safeParseJson(response)) as { error?: string } | null;
-    throw new Error(failure?.error ?? "Generation failed.");
+    throw new Error(failure?.error ?? "生成失败。");
   }
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -177,11 +207,11 @@ async function streamGenerate(prompt: string, mode: GenerationMode, onEvent: Str
       onEvent("generation_complete", fallback);
       return;
     }
-    throw new Error("Stream fallback payload is invalid.");
+    throw new Error("流式兜底响应格式不正确。");
   }
 
   if (!response.body) {
-    throw new Error("Streaming response has no body.");
+    throw new Error("流式响应缺少可读取的数据体。");
   }
 
   const reader = response.body.getReader();

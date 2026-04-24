@@ -1,36 +1,37 @@
 import type { AgentStep } from "@/lib/types";
+import { formatAgentStatus } from "@/lib/ui";
 
 const fallbackSteps: AgentStep[] = [
   {
     id: "planner",
     key: "planner",
-    label: "Planner Agent",
+    label: "规划 Agent",
     status: "pending",
-    summary: "Waiting for an app brief.",
+    summary: "等待接收新的产品需求。",
     output: []
   },
   {
     id: "ux",
     key: "ux",
-    label: "UX Agent",
+    label: "交互 Agent",
     status: "pending",
-    summary: "Screen flow will appear here.",
+    summary: "等待规划结果后输出页面结构。",
     output: []
   },
   {
     id: "coder",
     key: "coder",
-    label: "Code Agent",
+    label: "代码 Agent",
     status: "pending",
-    summary: "Generated files will appear after planning.",
+    summary: "等待生成页面骨架与数据模型。",
     output: []
   },
   {
     id: "qa",
     key: "qa",
-    label: "QA Agent",
+    label: "校验 Agent",
     status: "pending",
-    summary: "Viability checks will appear here.",
+    summary: "等待检查当前结果是否可演示。",
     output: []
   }
 ];
@@ -51,8 +52,8 @@ export function AgentTimeline({ steps, isGenerating }: AgentTimelineProps) {
   return (
     <section className="panel timeline-panel">
       <div className="panel-heading">
-        <p className="eyebrow">Execution</p>
-        <h2>Agent timeline</h2>
+        <p className="eyebrow">执行过程</p>
+        <h2>Agent 时间线</h2>
       </div>
       <div className="timeline">
         {effectiveSteps.map((step, index) => (
@@ -61,7 +62,7 @@ export function AgentTimeline({ steps, isGenerating }: AgentTimelineProps) {
             <div>
               <div className="step-title-row">
                 <h3>{step.label}</h3>
-                <span>{step.status}</span>
+                <span>{formatAgentStatus(step.status)}</span>
               </div>
               <p>{step.summary}</p>
               {step.output.length > 0 ? (

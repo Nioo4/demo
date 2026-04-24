@@ -36,16 +36,16 @@ export function ProjectsExplorer() {
   }, []);
 
   if (isLoading) {
-    return <p className="muted">Loading generated projects...</p>;
+    return <p className="muted">正在加载项目记录...</p>;
   }
 
   if (projects.length === 0) {
     return (
       <section className="empty-state">
-        <h2>No projects yet</h2>
-        <p>Create the first app blueprint from the builder workspace.</p>
+        <h2>还没有项目记录</h2>
+        <p>先去生成台创建第一条应用结果，这里就会出现可复看的项目卡片。</p>
         <Link className="button primary" href="/builder">
-          Open Builder
+          打开生成台
         </Link>
       </section>
     );
