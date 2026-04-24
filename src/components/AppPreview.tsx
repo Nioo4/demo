@@ -96,6 +96,7 @@ function SchemaPreview({ project, previewSchema }: { project: GenerationProject;
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [calculatorExpressions, setCalculatorExpressions] = useState<Record<string, string>>({});
   const [calculatorHistory, setCalculatorHistory] = useState<Record<string, string[]>>({});
+  const calculatorHistoryEntries = useMemo(() => Object.values(calculatorHistory).flat(), [calculatorHistory]);
 
   useEffect(() => {
     const nextFieldValues: Record<string, string> = {};
@@ -175,6 +176,7 @@ function SchemaPreview({ project, previewSchema }: { project: GenerationProject;
               fieldValues,
               calculatorExpressions,
               calculatorHistory,
+              calculatorHistoryEntries,
               setFieldValues,
               setCalculatorExpressions,
               setCalculatorHistory
@@ -240,12 +242,13 @@ function renderSection(context: SectionRenderContext) {
         </article>
       );
 
-    case "stats":
+    case "stats": {
+      const metrics = resolvePreviewMetrics(section, context.calculatorHistoryEntries);
       return (
         <article className="rendered-preview-section" key={section.id}>
           <SectionHeader section={section} />
           <div className="rendered-preview-stats">
-            {(section.metrics ?? []).map((metric) => (
+            {metrics.map((metric) => (
               <div className="rendered-preview-stat-card" key={`${section.id}-${metric.label}`}>
                 <span>{metric.label}</span>
                 <strong>{metric.value}</strong>
@@ -254,6 +257,7 @@ function renderSection(context: SectionRenderContext) {
           </div>
         </article>
       );
+    }
 
     case "cardGrid":
       return (
@@ -286,7 +290,8 @@ function renderSection(context: SectionRenderContext) {
         </article>
       );
 
-    case "table":
+    case "table": {
+      const rows = resolvePreviewRows(section, context.calculatorHistoryEntries);
       return (
         <article className="rendered-preview-section rendered-preview-table-shell" key={section.id}>
           <SectionHeader section={section} />
@@ -300,7 +305,7 @@ function renderSection(context: SectionRenderContext) {
                 </tr>
               </thead>
               <tbody>
-                {(section.rows ?? []).map((row, rowIndex) => (
+                {rows.map((row, rowIndex) => (
                   <tr key={`${section.id}-row-${rowIndex}`}>
                     {row.map((cell, cellIndex) => (
                       <td key={`${section.id}-${rowIndex}-${cellIndex}`}>{cell}</td>
@@ -312,6 +317,7 @@ function renderSection(context: SectionRenderContext) {
           </div>
         </article>
       );
+    }
 
     case "kanban":
       return (
@@ -428,6 +434,68 @@ function commitCalculatorResult(sectionId: string, result: string | null, contex
     ...current,
     [sectionId]: [historyEntry, ...(current[sectionId] ?? [])].slice(0, 6)
   }));
+}
+
+function resolvePreviewMetrics(section: PreviewSection, calculatorHistoryEntries: string[]) {
+  if (section.id !== "history-stats" || calculatorHistoryEntries.length === 0) {
+    return section.metrics ?? [];
+  }
+
+  const latestResult = splitHistoryEntry(calculatorHistoryEntries[0]).result || "暂无";
+
+  return (section.metrics ?? []).map((metric) => {
+    if (metric.label === "今日计算") {
+      return {
+        ...metric,
+        value: String(calculatorHistoryEntries.length)
+      };
+    }
+
+    if (metric.label === "最近结果") {
+      return {
+        ...metric,
+        value: latestResult
+      };
+    }
+
+    return metric;
+  });
+}
+
+function resolvePreviewRows(section: PreviewSection, calculatorHistoryEntries: string[]) {
+  if (section.id !== "history-table" || calculatorHistoryEntries.length === 0) {
+    return section.rows ?? [];
+  }
+
+  return calculatorHistoryEntries.map((entry, index) => {
+    const { expression, result } = splitHistoryEntry(entry);
+
+    return [expression, result || "-", formatHistoryRelativeTime(index)];
+  });
+}
+
+function splitHistoryEntry(entry: string) {
+  const parts = entry.split(" = ");
+
+  if (parts.length < 2) {
+    return {
+      expression: entry,
+      result: ""
+    };
+  }
+
+  return {
+    expression: parts.slice(0, -1).join(" = "),
+    result: parts[parts.length - 1] ?? ""
+  };
+}
+
+function formatHistoryRelativeTime(index: number) {
+  if (index === 0) {
+    return "刚刚";
+  }
+
+  return `${index} 条前`;
 }
 
 function handleCalculatorKey(sectionId: string, key: string, context: SectionRenderContext) {
@@ -590,6 +658,7 @@ type SectionRenderContext = {
   fieldValues: Record<string, string>;
   calculatorExpressions: Record<string, string>;
   calculatorHistory: Record<string, string[]>;
+  calculatorHistoryEntries: string[];
   setFieldValues: Dispatch<SetStateAction<Record<string, string>>>;
   setCalculatorExpressions: Dispatch<SetStateAction<Record<string, string>>>;
   setCalculatorHistory: Dispatch<SetStateAction<Record<string, string[]>>>;
