@@ -20,6 +20,8 @@ export function generateMockProject(prompt: string): GenerationProject {
     title,
     prompt: normalizedPrompt,
     status: "ready",
+    isPublic: false,
+    shareToken: null,
     theme: "command-center",
     agentSteps,
     blueprint,

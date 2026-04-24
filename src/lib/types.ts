@@ -42,6 +42,8 @@ export type GenerationProject = {
   title: string;
   prompt: string;
   status: ProjectStatus;
+  isPublic: boolean;
+  shareToken: string | null;
   theme: string;
   agentSteps: AgentStep[];
   blueprint: AppBlueprint;

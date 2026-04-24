@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { listProjects, saveProject } from "@/lib/server-store";
+import { getRequestUser } from "@/lib/supabase-server";
 import type { GenerationProject } from "@/lib/types";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const user = await getRequestUser(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   try {
-    const projects = await listProjects();
+    const projects = await listProjects(user.id);
     return NextResponse.json({ projects });
   } catch (error) {
     return NextResponse.json(
@@ -16,6 +22,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await getRequestUser(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   let project: GenerationProject;
 
   try {
@@ -29,7 +40,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const savedProject = await saveProject(project);
+    const savedProject = await saveProject(project, user.id);
     return NextResponse.json({ project: savedProject }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "clear:legacy-projects": "node ./scripts/clear-legacy-projects.mjs",
     "test:real-db": "node ./scripts/test-real-db.mjs",
     "test:real-ai": "node ./scripts/test-real-ai.mjs"
   },

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+import { useAuth } from "@/components/AuthProvider";
 
 const navItems = [
   {
@@ -23,7 +25,15 @@ const navItems = [
 ];
 
 export function AppSidebar() {
+  const router = useRouter();
   const pathname = usePathname();
+  const { isLoading, user, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <aside className="app-sidebar">
@@ -45,11 +55,7 @@ export function AppSidebar() {
               item.href === "/" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
-              <Link
-                className={`sidebar-link ${isActive ? "active" : ""}`}
-                href={item.href}
-                key={item.href}
-              >
+              <Link className={`sidebar-link ${isActive ? "active" : ""}`} href={item.href} key={item.href}>
                 <strong>{item.label}</strong>
                 <span>{item.description}</span>
               </Link>
@@ -59,9 +65,29 @@ export function AppSidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <p className="sidebar-caption">使用提示</p>
-        <h2>推荐从生成台开始</h2>
-        <p>先输入一句需求，查看生成过程与预览结果；满意后再到项目库回看历史记录。</p>
+        <p className="sidebar-caption">账号状态</p>
+        {isLoading ? (
+          <p>正在读取登录状态...</p>
+        ) : user ? (
+          <>
+            <h2>已登录</h2>
+            <p className="sidebar-user-email" title={user.email ?? "已登录用户"}>
+              {user.email ?? "已登录用户"}
+            </p>
+            <p>现在生成和保存的项目只会归属于当前账号。</p>
+            <button className="button secondary sidebar-action" onClick={handleSignOut} type="button">
+              退出登录
+            </button>
+          </>
+        ) : (
+          <>
+            <h2>登录后保存你的项目</h2>
+            <p>未登录时无法查看自己的项目记录，也不能把生成结果绑定到个人账号。</p>
+            <Link className="button primary sidebar-action" href={{ pathname: "/auth", query: { next: "/builder" } }}>
+              登录 / 注册
+            </Link>
+          </>
+        )}
       </div>
     </aside>
   );

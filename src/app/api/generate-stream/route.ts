@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { buildPendingSkeleton, generateProjectFromPrompt, normalizeMode } from "@/lib/generation-service";
 import { saveProject } from "@/lib/server-store";
+import { getRequestUser } from "@/lib/supabase-server";
 import type { AgentStep, GenerateRequest, GenerationProject } from "@/lib/types";
 
 const encoder = new TextEncoder();
@@ -21,6 +22,11 @@ const runningSummary: Record<AgentStep["key"], string> = {
 };
 
 export async function POST(request: Request) {
+  const user = await getRequestUser(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   let body: GenerateRequest;
 
   try {
@@ -29,12 +35,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "请求体不是合法的 JSON。" }, { status: 400 });
   }
 
-  if (!body.prompt || body.prompt.trim().length < 8) {
-    return NextResponse.json({ error: "需求描述至少需要 8 个字符。" }, { status: 400 });
+  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  if (prompt.length === 0) {
+    return NextResponse.json({ error: "需求描述不能为空。" }, { status: 400 });
   }
 
   const mode = normalizeMode(body.mode);
-  const pendingSkeleton = buildPendingSkeleton(body.prompt);
+  const pendingSkeleton = buildPendingSkeleton(prompt);
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
           project: toProgressProject(pendingSkeleton, 0, "running")
         });
 
-        const llmProject = await generateProjectFromPrompt(body.prompt, mode);
+        const llmProject = await generateProjectFromPrompt(prompt, mode);
         const finalProject: GenerationProject = {
           ...llmProject,
           id: pendingSkeleton.id,
@@ -72,11 +79,14 @@ export async function POST(request: Request) {
           });
         }
 
-        const persisted = await saveProject({
-          ...finalProject,
-          status: "ready",
-          updatedAt: new Date().toISOString()
-        });
+        const persisted = await saveProject(
+          {
+            ...finalProject,
+            status: "ready",
+            updatedAt: new Date().toISOString()
+          },
+          user.id
+        );
 
         sendEvent(controller, "generation_complete", { project: persisted });
         sendEvent(controller, "done", { ok: true });

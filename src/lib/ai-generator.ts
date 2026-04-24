@@ -342,6 +342,8 @@ function normalizeLlmProject(prompt: string, raw: unknown): GenerationProject {
     title,
     prompt: prompt.trim() || fallback.prompt,
     status: "ready",
+    isPublic: false,
+    shareToken: null,
     theme,
     blueprint,
     generatedCode,

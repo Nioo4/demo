@@ -80,6 +80,7 @@ select {
   display: grid;
   align-content: start;
   gap: 18px;
+  min-width: 0;
   height: calc(100vh - 36px);
   padding: 16px;
   background:
@@ -190,6 +191,7 @@ select {
 }
 
 .sidebar-footer {
+  min-width: 0;
   padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -205,6 +207,15 @@ select {
   margin: 0;
   font-size: clamp(1.4rem, 2vw, 2rem);
   line-height: 1.15;
+}
+
+.sidebar-user-email {
+  max-width: 100%;
+  margin: -4px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .app-main {
@@ -242,6 +253,7 @@ select {
 .composer-header,
 .composer-controls,
 .composer-footer,
+ .project-badges,
 .project-meta,
 .project-actions,
 .detail-actions,
@@ -569,6 +581,29 @@ select {
   align-items: start;
 }
 
+.share-panel {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.share-layout,
+.share-summary,
+.share-actions {
+  display: grid;
+  gap: 14px;
+}
+
+.share-layout {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.share-actions {
+  align-content: start;
+  justify-items: stretch;
+  min-width: 220px;
+}
+
 .side-column .panel {
   padding: 18px;
 }
@@ -725,27 +760,276 @@ select {
   margin-top: 18px;
 }
 
-.code-file {
+.code-panel {
+  overflow: hidden;
+}
+
+.code-workbench {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 20px;
-  background: rgba(20, 15, 11, 0.55);
+  border-radius: 22px;
+  background: rgba(18, 13, 10, 0.72);
 }
 
-.code-file > div {
+.code-explorer {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px 14px;
+  border-right: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 188, 103, 0.04), transparent 10rem),
+    rgba(12, 9, 6, 0.74);
+}
+
+.code-explorer-header,
+.code-toolbar-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.code-explorer-header span,
+.code-toolbar-copy span,
+.code-file-meta,
+.code-file-meta small {
+  color: var(--muted);
+}
+
+.code-explorer-header span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.code-explorer-header strong,
+.code-toolbar-copy strong {
+  font-size: 0.95rem;
+}
+
+.code-file-list {
+  display: grid;
+  gap: 8px;
+}
+
+.code-file-entry,
+.code-tab,
+.code-copy-button,
+.auth-switch-button {
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.code-file-entry {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.code-file-entry:hover,
+.code-tab:hover,
+.code-copy-button:hover,
+.auth-switch-button:hover {
+  transform: translateY(-1px);
+}
+
+.code-file-entry.active {
+  border-color: rgba(255, 188, 103, 0.28);
+  background: linear-gradient(135deg, rgba(255, 188, 103, 0.12), rgba(255, 188, 103, 0.03));
+}
+
+.code-file-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.code-file-meta {
+  display: grid;
+  gap: 2px;
+  font-size: 0.78rem;
+}
+
+.code-file-meta small {
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.code-editor-shell {
+  display: grid;
+  min-width: 0;
+  background: rgba(10, 8, 6, 0.86);
+}
+
+.code-tabs {
   display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.code-tab {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.code-tab.active {
+  border-color: rgba(255, 188, 103, 0.28);
+  color: var(--text);
+  background: rgba(255, 188, 103, 0.12);
+}
+
+.code-toolbar {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.code-file pre {
-  max-height: 360px;
-  margin: 0;
+.code-copy-button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.code-editor {
+  max-height: 520px;
   overflow: auto;
-  padding: 16px;
+  padding: 14px 0;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.88rem;
+  line-height: 1.75;
+}
+
+.code-line {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.code-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.code-line-number {
+  color: rgba(255, 240, 214, 0.32);
+  text-align: right;
+  user-select: none;
+}
+
+.code-line-content {
+  min-width: 0;
   color: #ffeccc;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-token.comment {
+  color: #8e826b;
+}
+
+.code-token.string {
+  color: #f0c674;
+}
+
+.code-token.keyword {
+  color: #f28b82;
+}
+
+.code-token.number {
+  color: #8ab4f8;
+}
+
+.code-token.plain {
+  color: #ffeccc;
+}
+
+.auth-card {
+  width: min(620px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 188, 103, 0.13), transparent 18rem),
+    var(--panel-strong);
+  box-shadow: var(--shadow);
+}
+
+.auth-switch {
+  display: flex;
+  gap: 10px;
+  padding: 6px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.auth-switch-button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 14px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.auth-switch-button.active {
+  border-color: rgba(255, 188, 103, 0.28);
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(255, 188, 103, 0.14), rgba(255, 188, 103, 0.05));
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.auth-label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.auth-input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  outline: none;
+  background: rgba(12, 9, 6, 0.3);
+}
+
+.auth-input:focus {
+  border-color: rgba(255, 188, 103, 0.5);
+}
+
+.auth-submit {
+  width: 100%;
 }
 
 .project-grid {
@@ -760,6 +1044,16 @@ select {
 .project-actions,
 .detail-actions {
   gap: 10px;
+}
+
+.project-badges {
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.detail-chip-row {
+  margin: 12px 0 0;
 }
 
 .empty-state {
@@ -806,7 +1100,12 @@ select {
   .home-grid,
   .project-grid,
   .pipeline,
-  .builder-status-grid {
+  .builder-status-grid,
+  .code-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .share-layout {
     grid-template-columns: 1fr;
   }
 
@@ -816,9 +1115,15 @@ select {
 
   .topbar,
   .composer-header,
-  .composer-footer {
+  .composer-footer,
+  .code-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .code-explorer {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 }
 
@@ -848,11 +1153,21 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .code-line {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 0 12px;
+  }
+
   .composer-controls,
   .topbar-actions,
-  .detail-actions {
+  .detail-actions,
+  .auth-switch {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .share-actions {
+    min-width: 0;
   }
 
   .topbar-title {

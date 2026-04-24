@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppSidebar } from "@/components/AppSidebar";
+import { AuthProvider } from "@/components/AuthProvider";
 
 import "./globals.css";
 
@@ -17,22 +18,24 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <div className="app-shell">
-          <AppSidebar />
-          <div className="app-main">
-            <header className="topbar">
-              <div className="topbar-copy">
-                <p className="eyebrow">AI Workspace</p>
-                <h1 className="topbar-title">Atoms Lite 中文工作台</h1>
-                <p className="topbar-text">输入需求，查看过程，保存结果。</p>
-              </div>
-              <div className="topbar-actions">
-                <span className="topbar-chip">生成台 / 项目库</span>
-              </div>
-            </header>
-            <div className="page-slot">{children}</div>
+        <AuthProvider>
+          <div className="app-shell">
+            <AppSidebar />
+            <div className="app-main">
+              <header className="topbar">
+                <div className="topbar-copy">
+                  <p className="eyebrow">AI Workspace</p>
+                  <h1 className="topbar-title">Atoms Lite 中文工作台</h1>
+                  <p className="topbar-text">输入需求，查看过程，保存结果。</p>
+                </div>
+                <div className="topbar-actions">
+                  <span className="topbar-chip">生成台 / 项目库</span>
+                </div>
+              </header>
+              <div className="page-slot">{children}</div>
+            </div>
           </div>
-        </div>
+        </AuthProvider>
       </body>
     </html>
   );

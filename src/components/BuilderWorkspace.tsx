@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { AppPreview } from "@/components/AppPreview";
+import { AuthRequired } from "@/components/AuthRequired";
+import { useAuth } from "@/components/AuthProvider";
 import { GeneratedCodePanel } from "@/components/GeneratedCodePanel";
+import { ProjectSharePanel } from "@/components/ProjectSharePanel";
 import { PromptComposer } from "@/components/PromptComposer";
+import { fetchWithAuth } from "@/lib/api-client";
 import type { GenerationMode, GenerationProject } from "@/lib/types";
 import { formatAiProvider, formatGenerationMode } from "@/lib/ui";
 
@@ -24,6 +28,7 @@ type StreamPayload = {
 type StreamListener = (eventName: StreamEventName, payload: StreamPayload) => void;
 
 export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: BuilderWorkspaceProps) {
+  const { isLoading: isAuthLoading, user } = useAuth();
   const [prompt, setPrompt] = useState(samplePrompt);
   const [mode, setMode] = useState<GenerationMode>("mock");
   const [llmConfigured, setLlmConfigured] = useState(false);
@@ -34,6 +39,11 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      setProject(null);
+      return;
+    }
+
     let isMounted = true;
 
     async function loadProjectFromContext(id: string) {
@@ -55,7 +65,7 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
     return () => {
       isMounted = false;
     };
-  }, [initialProjectId]);
+  }, [initialProjectId, user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,69 +138,92 @@ export function BuilderWorkspace({ samplePrompt, initialProjectId = null }: Buil
     }
   }
 
+  const isShareReady = project?.status === "ready";
+
   return (
     <main className="builder-layout">
-      <section className="builder-focus">
-        <section className="builder-hero builder-hero-compact">
-          <div>
-            <p className="eyebrow">生成台</p>
-            <h1>把一句需求，变成一套可查看的应用方案。</h1>
-            <p>描述你的产品想法，然后在下方查看时间线、预览和代码结果。</p>
-          </div>
-
-          <div className="hero-actions">
-            <span className="topbar-chip">模式：{formatGenerationMode(mode)}</span>
-            <span className="topbar-chip">
-              模型：{formatAiProvider(aiProvider)} {llmConfigured ? llmModel || "已连接" : "未连接"}
-            </span>
-          </div>
+      {isAuthLoading ? (
+        <section className="empty-state auth-required">
+          <h2>正在检查登录状态...</h2>
+          <p>请稍等，我们正在确认当前账号信息。</p>
         </section>
-
-        <PromptComposer
-          prompt={prompt}
-          mode={mode}
-          llmConfigured={llmConfigured}
-          aiProvider={aiProvider}
-          isGenerating={isGenerating}
-          error={error}
-          onPromptChange={setPrompt}
-          onModeChange={setMode}
-          onGenerate={handleGenerate}
+      ) : !user ? (
+        <AuthRequired
+          title="登录后才能生成并保存项目"
+          description="生成结果会绑定到你的账号名下，因此需要先登录或注册，再进入生成台。"
+          nextPath="/builder"
         />
-      </section>
+      ) : (
+        <>
+          <section className="builder-focus">
+            <section className="builder-hero builder-hero-compact">
+              <div>
+                <p className="eyebrow">生成台</p>
+                <h1>把一句需求，变成一套可查看的应用方案。</h1>
+                <p>描述你的产品想法，然后在下方查看时间线、预览、代码，以及生成完成后的分享设置。</p>
+              </div>
 
-      <section className="workspace-grid">
-        <div className="main-column">
-          <AppPreview project={project} />
-          <GeneratedCodePanel code={project?.generatedCode ?? null} />
-        </div>
+              <div className="hero-actions">
+                <span className="topbar-chip">模式：{formatGenerationMode(mode)}</span>
+                <span className="topbar-chip">
+                  模型：{formatAiProvider(aiProvider)} {llmConfigured ? llmModel || "已连接" : "未连接"}
+                </span>
+              </div>
+            </section>
 
-        <div className="side-column">
-          <AgentTimeline steps={project?.agentSteps ?? []} isGenerating={isGenerating} />
+            <PromptComposer
+              prompt={prompt}
+              mode={mode}
+              llmConfigured={llmConfigured}
+              aiProvider={aiProvider}
+              isGenerating={isGenerating}
+              error={error}
+              onPromptChange={setPrompt}
+              onModeChange={setMode}
+              onGenerate={handleGenerate}
+            />
 
-          <section className="panel tips-panel">
-            <div className="panel-heading">
-              <p className="eyebrow">使用指南</p>
-              <h2>建议你这样看结果</h2>
-            </div>
-            <ul className="check-list">
-              <li>先看右侧时间线，确认四个阶段都正常完成。</li>
-              <li>再看中间预览区，检查页面结构和用户流程是否合理。</li>
-              <li>最后对照代码区，确认代码产物和预览结果基本一致。</li>
-            </ul>
+            {isShareReady && project ? (
+              <ProjectSharePanel
+                project={project}
+                onProjectChange={setProject}
+                title="生成完成后直接分享"
+                description="这次生成的项目已经保存完成，你可以在这里直接切换私有 / 公开，并复制分享链接。"
+              />
+            ) : null}
           </section>
-        </div>
-      </section>
+
+          <section className="workspace-grid">
+            <div className="main-column">
+              <AppPreview project={project} />
+              <GeneratedCodePanel code={project?.generatedCode ?? null} />
+            </div>
+
+            <div className="side-column">
+              <AgentTimeline steps={project?.agentSteps ?? []} isGenerating={isGenerating} />
+
+              <section className="panel tips-panel">
+                <div className="panel-heading">
+                  <p className="eyebrow">使用指南</p>
+                  <h2>建议你这样看结果</h2>
+                </div>
+                <ul className="check-list">
+                  <li>先看右侧时间线，确认四个阶段都正常完成。</li>
+                  <li>再看中间预览区，检查页面结构和用户流程是否合理。</li>
+                  <li>最后对照代码区，确认代码产物和预览结果基本一致。</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
 
 async function streamGenerate(prompt: string, mode: GenerationMode, onEvent: StreamListener) {
-  const response = await fetch("/api/generate-stream", {
+  const response = await fetchWithAuth("/api/generate-stream", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
     body: JSON.stringify({ prompt, mode })
   });
 
@@ -246,7 +279,7 @@ async function streamGenerate(prompt: string, mode: GenerationMode, onEvent: Str
 
 async function fetchProjectFromApi(projectId: string) {
   try {
-    const response = await fetch(`/api/projects/${projectId}`);
+    const response = await fetchWithAuth(`/api/projects/${projectId}`);
     if (!response.ok) {
       return null;
     }

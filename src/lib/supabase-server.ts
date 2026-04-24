@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
 type SupabaseGlobal = typeof globalThis & {
   __atomsLiteSupabaseAdmin?: SupabaseClient;
@@ -33,4 +33,25 @@ export function getSupabaseAdminClient() {
   }
 
   return supabaseGlobal.__atomsLiteSupabaseAdmin;
+}
+
+export async function getRequestUser(request: Request): Promise<User | null> {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const accessToken = authorization.slice("Bearer ".length).trim();
+  if (!accessToken) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase.auth.getUser(accessToken);
+
+  if (error || !data.user) {
+    return null;
+  }
+
+  return data.user;
 }

@@ -15,6 +15,10 @@ export function formatProjectStatus(status: ProjectStatus) {
   }
 }
 
+export function formatProjectVisibility(isPublic: boolean) {
+  return isPublic ? "公开分享" : "私有项目";
+}
+
 export function formatAgentStatus(status: AgentStatus) {
   switch (status) {
     case "pending":
